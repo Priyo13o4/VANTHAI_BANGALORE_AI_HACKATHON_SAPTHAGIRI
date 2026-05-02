@@ -38,22 +38,34 @@ export default function Form18Sections() {
           <h2 className="text-[14px] font-bold text-[#1a202c]">Provide details for each section</h2>
           
           <div className="bg-white border border-[#e2e8f0] rounded-sm divide-y divide-[#edf2f7]">
-            {sections.map((section, idx) => (
-              <div key={idx} className="p-5 flex items-center justify-between hover:bg-[#f8fafc] transition-colors group cursor-pointer">
-                <div className="space-y-1">
-                  <h3 className="text-[14px] font-bold text-[#1a202c] group-hover:text-[#1d4ed8]">
-                    {section.title}
-                  </h3>
-                  <p className="text-[11px] text-[#718096]">
-                    {section.desc}
-                  </p>
+            {sections.map((section, idx) => {
+              const isAssesseeSection = section.title === 'Particulars of the assessee';
+              const isCompleted = isAssesseeSection && !!localStorage.getItem('form18_assessee_details');
+
+              return (
+                <div 
+                  key={idx} 
+                  onClick={() => isAssesseeSection && navigate('/itr/assessee-details')}
+                  className="p-5 flex items-center justify-between hover:bg-[#f8fafc] transition-colors group cursor-pointer"
+                >
+                  <div className="space-y-1">
+                    <h3 className="text-[14px] font-bold text-[#1a202c] group-hover:text-[#1d4ed8] flex items-center gap-2">
+                      {section.title}
+                      {isCompleted && (
+                        <span className="text-green-600 text-[16px]">✓</span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-[#718096]">
+                      {section.desc}
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-2 text-[11px] font-bold ${isCompleted ? 'text-green-600' : 'text-[#1d4ed8]'}`}>
+                    <span>{isCompleted ? 'Completed' : 'Provide details'}</span>
+                    <span className="text-[14px]">›</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-[11px] font-bold text-[#1d4ed8]">
-                  <span>Provide details</span>
-                  <span className="text-[14px]">›</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
