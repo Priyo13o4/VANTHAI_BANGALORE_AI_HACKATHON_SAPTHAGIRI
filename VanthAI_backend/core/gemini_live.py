@@ -48,8 +48,8 @@ print("DEBUG: [GEMINI LIVE] Loading v1.0.3 (Multi-turn support)")
 _genai_client = genai.Client(api_key=settings.google_ai_api_key)
 
 
-def _build_navigation_tool(available_routes: list[str]) -> types.Tool:
-    """Gemini function-call tool for UI navigation."""
+def _build_voice_tools(available_routes: list[str]) -> types.Tool:
+    """Gemini function-call tools for voice: navigation + on-screen element highlighting."""
     return types.Tool(
         function_declarations=[
             types.FunctionDeclaration(
@@ -68,7 +68,46 @@ def _build_navigation_tool(available_routes: list[str]) -> types.Tool:
                     },
                     required=["url"],
                 ),
-            )
+            ),
+            types.FunctionDeclaration(
+                name="highlight_element",
+                description=(
+                    "Highlight a specific UI element on the current page using its data-vanthai-id. "
+                    "Use this to point the user's attention to a button, field, or section."
+                ),
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "element_id": types.Schema(
+                            type="STRING",
+                            description="The data-vanthai-id value of the element to highlight (without brackets or quotes).",
+                        ),
+                        "title": types.Schema(
+                            type="STRING",
+                            description="Short popover title shown near the highlighted element.",
+                        ),
+                        "description": types.Schema(
+                            type="STRING",
+                            description="Popover description explaining what the element does.",
+                        ),
+                    },
+                    required=["element_id"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="query_health_records",
+                description="Query the complete medical history (health records) for a patient. Returns diagnosis, dates, and treatments.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "patient_id": types.Schema(
+                            type="INTEGER",
+                            description="Integer patient ID (e.g. 1 or 35).",
+                        ),
+                    },
+                    required=["patient_id"],
+                ),
+            ),
         ]
     )
 
@@ -89,11 +128,14 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
         app: str,
         system_prompt: str,
         available_routes: list[str],
+        provided_session_id: str | None = None,
     ) -> None:
         super().__init__(websocket, app)
         self.system_prompt = system_prompt
         self.available_routes = available_routes
+        self.provided_session_id = provided_session_id
         self._stop_event: asyncio.Event = asyncio.Event()
+        self._owned_session = False  # True only if we created the session ourselves
 
     # ── JSON helpers ──────────────────────────────────────────────────────────
 
@@ -245,8 +287,6 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                             "message": None,
                             "message_type": "text",
                         })
-                    
-                    # Send tool response back to Gemini
                     try:
                         await session.send_tool_response(
                             function_responses=[
@@ -259,6 +299,63 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                         )
                     except Exception as exc:
                         logger.warning("voice_pump_gemini.tool_response_error", error=str(exc))
+
+                elif fc.name == "highlight_element":
+                    args = fc.args or {}
+                    element_id = args.get("element_id", "")
+                    title = args.get("title", "")
+                    description = args.get("description", "")
+                    if element_id:
+                        payload: dict = {
+                            "type": "action",
+                            "action": "highlight",
+                            "element": element_id,
+                            "message": description or title or "Here's what you need.",
+                            "message_type": "text",
+                        }
+                        if title or description:
+                            payload["popover"] = {"title": title, "description": description}
+                        await self._send_json(payload)
+                    try:
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"result": f"Highlighted element: {element_id}"},
+                                )
+                            ]
+                        )
+                    except Exception as exc:
+                        logger.warning("voice_pump_gemini.tool_response_error", error=str(exc))
+
+                elif fc.name == "query_health_records":
+                    from agents.cloudcare.tools import query_health_records
+                    pid = (fc.args or {}).get("patient_id") or 1
+                    try:
+                        # query_health_records is an @tool; call its inner function .func
+                        result_json = await query_health_records.func(pid)
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"result": result_json},
+                                )
+                            ]
+                        )
+                    except Exception as exc:
+                        logger.error("voice_pump_gemini.query_records_error", error=str(exc))
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"error": str(exc)},
+                                )
+                            ]
+                        )
+
         except Exception as exc:
             logger.error("voice_handle_tool_call.error", error=str(exc))
 
@@ -273,17 +370,21 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
         4. Clean up on disconnect
         """
         await self.ws.accept()
-        self.session_id = await create_session(app=self.app)
+        if self.provided_session_id:
+            self.session_id = self.provided_session_id
+            self._owned_session = False
+        else:
+            self.session_id = await create_session(app=self.app)
+            self._owned_session = True
         await self._send_json({"type": "session_init", "session_id": self.session_id})
         logger.info("voice_ws.connected", session_id=self.session_id, app=self.app)
-        print(f"DEBUG: [VOICE WS CONNECT] app={self.app} session={self.session_id}")
 
         live_config = types.LiveConnectConfig(
             response_modalities=["AUDIO"],
             input_audio_transcription=types.AudioTranscriptionConfig(),   # user speech → text
             output_audio_transcription=types.AudioTranscriptionConfig(),  # model audio → text
             system_instruction=self.system_prompt,
-            tools=[_build_navigation_tool(self.available_routes)],
+            tools=[_build_voice_tools(self.available_routes)],
         )
 
         try:
@@ -319,6 +420,6 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                 pass
         finally:
             self._stop_event.set()
-            if self.session_id:
+            if self.session_id and self._owned_session:
                 await delete_session(self.session_id)
             logger.info("voice_ws.disconnected", session_id=self.session_id, app=self.app)
