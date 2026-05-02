@@ -231,6 +231,7 @@ export default function VanthAIChatWidget({ app }: Props) {
               <RotateCcw size={18} />
             </button>
             <button
+              data-vanthai-id="vanthai-voice-toggle"
               onClick={() => setIsVoiceMode(!isVoiceMode)}
               className={clsx(
                 'p-2 rounded-full transition-all duration-300 shadow-inner',
@@ -330,6 +331,7 @@ export default function VanthAIChatWidget({ app }: Props) {
           ) : (
             <div className="relative flex items-end gap-2 bg-slate-900/50 rounded-2xl border border-slate-700/50 p-1.5 transition-all focus-within:border-indigo-500/50 focus-within:bg-slate-900 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)]">
               <textarea
+                data-vanthai-id="vanthai-chat-input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -344,6 +346,7 @@ export default function VanthAIChatWidget({ app }: Props) {
                 rows={1}
               />
               <button
+                data-vanthai-id="vanthai-chat-send"
                 onClick={handleSend}
                 disabled={!input.trim() || connectionState !== 'connected'}
                 className="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 disabled:opacity-30 disabled:hover:bg-indigo-600 transition-colors shrink-0 mb-0.5 mr-0.5"
