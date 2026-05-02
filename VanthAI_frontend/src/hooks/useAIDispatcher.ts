@@ -56,8 +56,8 @@ export function useAIDispatcher({
 
       // ── New blocks (added after ERP-SIH blocks, do NOT touch above) ──────────
 
-      // action: highlight (VanthAI Spotlight — replaces Driver.js)
-      else if (parsed.action === 'highlight' && parsed.element) {
+      // action: highlight / spotlight (VanthAI Spotlight — replaces Driver.js)
+      else if ((parsed.action === 'highlight' || parsed.action === 'spotlight') && parsed.element) {
         const selector = parsed.element;
         const normalizedId = selector.replace(/\[data-vanthai-id=['"]?([^'"\\]+)['"]?\]/i, '$1');
         if (allowedElements.has(normalizedId) || allowedElements.has(selector)) {
