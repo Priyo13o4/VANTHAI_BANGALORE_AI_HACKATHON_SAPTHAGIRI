@@ -2,19 +2,15 @@
 /**
  * src/config/ws.ts
  * ─────────────────
- * SINGLE source for all WebSocket endpoint URLs.
- * All values come from import.meta.env (VITE_* prefix).
- * NO WebSocket URL appears anywhere else in the codebase.
- *
- * Hard constraint: Never hardcode ws:// or wss:// strings outside this file.
+ * SINGLE source for all API and WebSocket endpoint URLs.
  */
 export const WS_ENDPOINTS = {
   cloudcare: {
-    chat:  import.meta.env.VITE_WS_CLOUDCARE_CHAT  as string,
+    chat:  import.meta.env.VITE_HTTP_CLOUDCARE_CHAT as string,
     voice: import.meta.env.VITE_WS_CLOUDCARE_VOICE as string,
   },
   itr: {
-    chat:  import.meta.env.VITE_WS_ITR_CHAT  as string,
+    chat:  import.meta.env.VITE_HTTP_ITR_CHAT as string,
     voice: import.meta.env.VITE_WS_ITR_VOICE as string,
   },
 } as const;

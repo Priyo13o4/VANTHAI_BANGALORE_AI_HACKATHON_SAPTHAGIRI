@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import clsx from 'clsx';
-import { useWebSocket } from '../../hooks/useWebSocket';
+import { useChatApi } from '../../hooks/useChatApi';
 import { useAIDispatcher } from '../../hooks/useAIDispatcher';
 import { useVoiceStreamer } from '../../hooks/useVoiceStreamer';
 import { CLOUDCARE_ALLOWED } from '../../apps/cloudcare/tours/index';
@@ -23,8 +24,9 @@ interface Props {
 
 export default function VanthAIChatWidget({ app }: Props) {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   
-  const STORAGE_KEY = `vanthai_chat_history_${app}_teal`;
+  const STORAGE_KEY = `vanthai_chat_history_${app}_teal_v3`;
   
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -67,18 +69,18 @@ export default function VanthAIChatWidget({ app }: Props) {
   const allowedRoutes = app === 'cloudcare' ? CLOUDCARE_ALLOWED : ITR_ALLOWED;
   const { dispatchAction } = useAIDispatcher({ allowedRoutes });
 
-  // ── Text Handler (WebSocket) ──
-  const onWSMessage = useCallback((envelope: WSEnvelope) => {
+  // ── Text Handler (HTTP/SSE via useChatApi) ──
+  const onChatMessage = useCallback((envelope: WSEnvelope) => {
     if (envelope.type === 'token') {
       setIsThinking(false);
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last && last.role === 'assistant' && last.id === streamingIdRef.current) {
-          return [...prev.slice(0, -1), { ...last, content: last.content + (envelope as any).content }];
+          return [...prev.slice(0, -1), { ...last, content: last.content + envelope.content }];
         }
         const newId = Math.random().toString(36).substring(7);
         streamingIdRef.current = newId;
-        return [...prev, { id: newId, role: 'assistant', content: (envelope as any).content, isStreaming: true }];
+        return [...prev, { id: newId, role: 'assistant', content: envelope.content, isStreaming: true }];
       });
     } else if (envelope.type === 'done') {
       setMessages((prev) => prev.map((m) => m.id === streamingIdRef.current ? { ...m, isStreaming: false } : m));
@@ -86,16 +88,16 @@ export default function VanthAIChatWidget({ app }: Props) {
       setIsThinking(false);
     } else if (envelope.type === 'thinking') {
       setIsThinking(true);
-      if ((envelope as any).content) {
+      if (envelope.content) {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last && last.role === 'assistant' && last.id === streamingIdRef.current) {
-            const toolCalls = [...(last.toolCalls || []), (envelope as any).content as string];
+            const toolCalls = [...(last.toolCalls || []), envelope.content];
             return [...prev.slice(0, -1), { ...last, toolCalls }];
           }
           const newId = Math.random().toString(36).substring(7);
           streamingIdRef.current = newId;
-          return [...prev, { id: newId, role: 'assistant', content: '', toolCalls: [(envelope as any).content as string] }];
+          return [...prev, { id: newId, role: 'assistant', content: '', toolCalls: [envelope.content] }];
         });
       }
     } else if (envelope.type === 'action') {
@@ -103,9 +105,9 @@ export default function VanthAIChatWidget({ app }: Props) {
     }
   }, [dispatchAction]);
 
-  const { sendMessage, connectionState } = useWebSocket({
+  const { sendMessage, connectionState: chatState } = useChatApi({
     url: WS_ENDPOINTS[app].chat,
-    onMessage: onWSMessage,
+    onMessage: onChatMessage,
   });
 
   // ── Voice Handler (Gemini Live) ──
@@ -124,7 +126,6 @@ export default function VanthAIChatWidget({ app }: Props) {
       setMessages(prev => prev.map(m => ({ ...m, isStreaming: false })));
     },
     onToolCall: (name, args) => {
-      // Correctly map Gemini tool calls to the dispatcher
       if (name === 'navigate_to' && args.path) {
         dispatchAction({ type: 'action', action: 'navigate', url: args.path } as any);
       }
@@ -148,12 +149,8 @@ export default function VanthAIChatWidget({ app }: Props) {
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: text }]);
     setInput('');
     
-    if (connectionState !== 'connected') {
-      console.warn('Cannot send message: Not connected to Vanth AI');
-      return;
-    }
     setIsThinking(true);
-    sendMessage(JSON.stringify({ text, current_page: window.location.pathname }));
+    sendMessage(text);
   };
 
   const handleClearChat = () => {
@@ -213,14 +210,14 @@ export default function VanthAIChatWidget({ app }: Props) {
               <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white ring-1 ring-white/30 shadow-sm">
                 <Bot size={20} />
               </div>
-              {connectionState === 'connected' && (
+              {chatState === 'connected' && (
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-teal-700 rounded-full"></span>
               )}
             </div>
             <div>
               <div className="text-white font-bold text-sm tracking-tight leading-none mb-1">Vanth AI</div>
-              <div className={clsx('text-[10px] font-bold uppercase tracking-widest', connectionState === 'connected' ? 'text-emerald-300' : 'text-teal-200 animate-pulse')}>
-                {connectionState === 'connected' ? 'Live Brain' : 'Syncing...'}
+              <div className={clsx('text-[10px] font-bold uppercase tracking-widest', chatState === 'connected' ? 'text-emerald-300' : 'text-teal-200 animate-pulse')}>
+                {chatState === 'connected' ? 'Live Brain' : 'Syncing...'}
               </div>
             </div>
           </div>
