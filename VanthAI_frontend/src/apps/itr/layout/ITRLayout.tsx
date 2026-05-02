@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
+import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
 
 const navItems = [
   { label: 'Dashboard', path: '/itr' },
@@ -86,6 +87,8 @@ export default function ITRLayout() {
     ['authToken', 'patientId', 'userEmail', 'wearableToken'].forEach(k => localStorage.removeItem(k));
     navigate('/');
   };
+
+  const showChatWidget = location.pathname !== '/itr';
 
   return (
     <div className="min-h-screen bg-[#f6f8fc] text-[#1f2937] font-sans flex flex-col">
@@ -247,7 +250,10 @@ export default function ITRLayout() {
         </div>
       </footer>
 
-      <VanthAIChatWidget app="itr" />
+      <SpotlightOverlay />
+
+      {showChatWidget && <VanthAIChatWidget app="itr" />}
     </div>
+
   );
 }
