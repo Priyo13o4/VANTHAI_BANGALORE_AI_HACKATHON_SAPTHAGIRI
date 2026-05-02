@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # ── LLM ───────────────────────────────────────────────
     google_ai_api_key: str = ""
     gemma_text_model: str = "gemma-4-31b-it"
+    gemini_voice_model: str = "gemini-3.1-flash-live-preview"
     lmstudio_base_url: str = "http://host.docker.internal:1234/v1"
     lmstudio_voice_model: str = "gemma-4-e4b"
 
