@@ -13,7 +13,7 @@ const navItems = [
         label: 'Income Tax Returns', 
         path: '/itr/personal',
         subItems: [
-          { label: 'File Income Tax Return', path: '/itr/personal' },
+          { label: 'File Income Tax Return', path: '/itr/file-return' },
           { label: 'View Filed Returns', path: '/itr/personal' },
           { label: 'e-Verify Return', path: '/itr/personal' },
           { label: 'View Form 26AS', path: '/itr/personal' },
