@@ -50,6 +50,8 @@ import FileITForms from './apps/itr/pages/FileITForms';
 import FileForm18 from './apps/itr/pages/FileForm18';
 import Form18Sections from './apps/itr/pages/Form18Sections';
 import AssesseeDetails from './apps/itr/pages/AssesseeDetails';
+import BusinessDetails from './apps/itr/pages/BusinessDetails';
+import ProjectDetails from './apps/itr/pages/ProjectDetails';
 
 const router = createBrowserRouter([
   // Redirect root to cloudcare login
@@ -98,6 +100,8 @@ const router = createBrowserRouter([
       { path: 'file-form-18', element: <FileForm18 /> },
       { path: 'form-18-sections', element: <Form18Sections /> },
       { path: 'assessee-details', element: <AssesseeDetails /> },
+      { path: 'business-details', element: <BusinessDetails /> },
+      { path: 'project-details', element: <ProjectDetails /> },
       { path: 'salary', element: <SalaryIncome /> },
       { path: 'deductions', element: <Deductions /> },
       { path: 'tax-paid', element: <TaxPaid /> },

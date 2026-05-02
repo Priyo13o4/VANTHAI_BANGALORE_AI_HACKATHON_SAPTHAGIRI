@@ -40,12 +40,27 @@ export default function Form18Sections() {
           <div className="bg-white border border-[#e2e8f0] rounded-sm divide-y divide-[#edf2f7]">
             {sections.map((section, idx) => {
               const isAssesseeSection = section.title === 'Particulars of the assessee';
-              const isCompleted = isAssesseeSection && !!localStorage.getItem('form18_assessee_details');
+              const isBusinessSection = section.title === 'Particulars of the specified business';
+              const isProjectSection = section.title === 'Details of proposed project';
+              
+              let isCompleted = false;
+              let path = '';
+              
+              if (isAssesseeSection) {
+                isCompleted = !!localStorage.getItem('form18_assessee_details');
+                path = '/itr/assessee-details';
+              } else if (isBusinessSection) {
+                isCompleted = !!localStorage.getItem('form18_business_details');
+                path = '/itr/business-details';
+              } else if (isProjectSection) {
+                isCompleted = !!localStorage.getItem('form18_project_details');
+                path = '/itr/project-details';
+              }
 
               return (
                 <div 
                   key={idx} 
-                  onClick={() => isAssesseeSection && navigate('/itr/assessee-details')}
+                  onClick={() => path && navigate(path)}
                   className="p-5 flex items-center justify-between hover:bg-[#f8fafc] transition-colors group cursor-pointer"
                 >
                   <div className="space-y-1">
