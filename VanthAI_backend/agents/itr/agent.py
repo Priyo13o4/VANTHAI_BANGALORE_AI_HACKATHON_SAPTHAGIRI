@@ -9,24 +9,17 @@ from agents.base_agent import build_agent_graph, run_agent
 from agents.itr.prompts import build_system_prompt, load_page_markdown_from_disk
 from agents.itr.tools import ITR_TOOLS
 from core.redis_client import append_message, get_session, update_session_page
-from core.websocket import BaseWebSocketHandler
+from core.http_chat import HTTPChatHandler
 
 logger = structlog.get_logger(__name__)
 
 _ITR_GRAPH = build_agent_graph(ITR_TOOLS)
 
 
-class ITRChatHandler(BaseWebSocketHandler):
-    async def handle_message(self, raw: str) -> None:
-        try:
-            data = json.loads(raw)
-            text = data.get("text", "").strip()
-            current_page = data.get("current_page", "/itr")
-        except (json.JSONDecodeError, AttributeError):
-            text = raw.strip()
-            current_page = "/itr"
-
+class ITRChatHandler(HTTPChatHandler):
+    async def handle_message(self, text: str, current_page: str) -> None:
         if not text:
+            await self.send_done()
             return
 
         session = await get_session(self.session_id) or {"messages": [], "current_page": current_page}
