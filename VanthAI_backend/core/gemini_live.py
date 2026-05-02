@@ -56,7 +56,8 @@ def _build_voice_tools(available_routes: list[str]) -> types.Tool:
                 name="navigate_to",
                 description=(
                     "Navigate the web portal to a specific page. "
-                    "Call this when the user asks to go somewhere, open a section, or see something."
+                    "Use this PROACTIVELY whenever discussing information (like medical records, salary, or vitals) "
+                    "that resides on a different page than the current one."
                 ),
                 parameters=types.Schema(
                     type="OBJECT",
@@ -106,6 +107,19 @@ def _build_voice_tools(available_routes: list[str]) -> types.Tool:
                         ),
                     },
                     required=["patient_id"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="query_doctors",
+                description="Query the list of available doctors. Can be filtered by specialty.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "specialty": types.Schema(
+                            type="STRING",
+                            description="Doctor's specialty (e.g. 'Cardiology', 'Endocrinology').",
+                        ),
+                    },
                 ),
             ),
         ]
@@ -333,8 +347,8 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                     from agents.cloudcare.tools import query_health_records
                     pid = (fc.args or {}).get("patient_id") or 1
                     try:
-                        # query_health_records is an @tool; call its inner function .func
-                        result_json = await query_health_records.func(pid)
+                        # Use .ainvoke() which is the standard way to execute LangChain tools
+                        result_json = await query_health_records.ainvoke({"patient_id": pid})
                         await session.send_tool_response(
                             function_responses=[
                                 types.FunctionResponse(
@@ -346,6 +360,22 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                         )
                     except Exception as exc:
                         logger.error("voice_pump_gemini.query_records_error", error=str(exc))
+                elif fc.name == "query_doctors":
+                    from agents.cloudcare.tools import query_doctors
+                    specialty = (fc.args or {}).get("specialty")
+                    try:
+                        result_json = await query_doctors.ainvoke({"specialty": specialty})
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"result": result_json},
+                                )
+                            ]
+                        )
+                    except Exception as exc:
+                        logger.error("voice_pump_gemini.query_doctors_error", error=str(exc))
                         await session.send_tool_response(
                             function_responses=[
                                 types.FunctionResponse(

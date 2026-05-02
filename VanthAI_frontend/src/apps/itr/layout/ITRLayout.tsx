@@ -87,8 +87,6 @@ export default function ITRLayout() {
     navigate('/');
   };
 
-  const showChatWidget = location.pathname !== '/itr';
-
   return (
     <div className="min-h-screen bg-[#f6f8fc] text-[#1f2937] font-sans flex flex-col">
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
@@ -249,7 +247,7 @@ export default function ITRLayout() {
         </div>
       </footer>
 
-      {showChatWidget && <VanthAIChatWidget app="itr" />}
+      <VanthAIChatWidget app="itr" />
     </div>
   );
 }

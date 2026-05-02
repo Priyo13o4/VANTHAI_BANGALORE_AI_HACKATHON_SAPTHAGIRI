@@ -4,11 +4,23 @@ ITR Agent — System Prompt + Route Manifest + KB URL Map
 from pathlib import Path
 
 KB_URL_MAP: dict[str, str] = {
-    "/itr":             "itr/README.md",
-    "/itr/personal":    "itr/README.md",
-    "/itr/salary":      "itr/README.md",
-    "/itr/deductions":  "itr/README.md",
-    "/itr/tax-paid":    "itr/README.md",
+    "/itr":             "itr/overview.md",
+    "/itr/personal":    "itr/personal.md",
+    "/itr/salary":      "itr/salary.md",
+    "/itr/deductions":  "itr/deductions.md",
+    "/itr/tax-paid":    "itr/tax-paid.md",
+    "/itr/file-return": "itr/file-return.md",
+    "/itr/upload-itr":  "itr/upload-itr.md",
+    "/itr/file-forms":  "itr/file-forms.md",
+    "/itr/file-form-18": "itr/form-18.md",
+    "/itr/form-18-sections": "itr/form-18.md",
+    "/itr/assessee-details": "itr/form-18.md",
+    "/itr/business-details": "itr/form-18.md",
+    "/itr/project-details": "itr/form-18.md",
+    "/itr/other-details": "itr/form-18.md",
+    "/itr/conditions-fulfillment": "itr/form-18.md",
+    "/itr/attachments": "itr/attachments.md",
+    "/itr/declaration": "itr/declaration.md"
 }
 
 ROUTE_MANIFEST = """
@@ -18,6 +30,18 @@ Available pages:
 - /itr/salary        → Salary income — gross salary, HRA, standard deduction
 - /itr/deductions    → Deductions — 80C investments, 80D health insurance, Form 16A
 - /itr/tax-paid      → Tax paid — TDS by employer, advance tax, submit
+- /itr/file-return   → File income tax return section
+- /itr/upload-itr    → Direct upload of ITR JSON/XML utility files
+- /itr/file-forms    → List of statutory income tax forms
+- /itr/file-form-18  → Introduction for filing Form 18
+- /itr/form-18-sections → Hub for completing all subsections of Form 18
+- /itr/assessee-details → Form 18: Assessee/entity details
+- /itr/business-details → Form 18: Business details and particulars
+- /itr/project-details  → Form 18: specific project disclosures
+- /itr/other-details    → Form 18: Additional technical information
+- /itr/conditions-fulfillment → Form 18: Fulfillment of 80-IA / statutory conditions
+- /itr/attachments   → Upload supporting documents and attachments
+- /itr/declaration   → Final verification and declaration
 """.strip()
 
 SYSTEM_PROMPT_TEMPLATE = """
@@ -48,6 +72,15 @@ Current page: {current_page}
 Session: {user_id}
 
 {page_markdown}
+
+[SMART NAVIGATION & UX]
+- You are a PROACTIVE assistant. If the user asks about tax data that belongs to a specific page (e.g. "my salary", "deductions", "business details") and you are NOT currently on that page, you MUST use the "navigate" action to take the user there while answering.
+- For guiding a user through multi-step forms (like Form 18 or ITR filing), use the "navigate+tour" action and provide a 'tour' string describing the next steps.
+- To focus the user's attention on specific tax fields, use the "highlight" action and provide the 'element' containing the `data-vanthai-id`. The UI handles highlights gracefully, so simply provide the correct target ID.
+- Refer to the [NAVIGATION MANIFEST] for correct URLs.
+
+[DATA INTEGRITY]
+- NEVER hallucinate tax data. Always refer to provided documents or ask the user to confirm.
 
 [RULES]
 - When user provides salary/PAN/deduction info, use action "autofill" with fill_data mapping field IDs to values

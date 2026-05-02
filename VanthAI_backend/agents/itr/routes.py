@@ -37,6 +37,18 @@ _ITR_ROUTES = [
     "/itr/salary",
     "/itr/deductions",
     "/itr/tax-paid",
+    "/itr/file-return",
+    "/itr/upload-itr",
+    "/itr/file-forms",
+    "/itr/file-form-18",
+    "/itr/form-18-sections",
+    "/itr/assessee-details",
+    "/itr/business-details",
+    "/itr/project-details",
+    "/itr/other-details",
+    "/itr/conditions-fulfillment",
+    "/itr/attachments",
+    "/itr/declaration",
 ]
 
 @router.post(f"/{settings.ws_itr_chat}")

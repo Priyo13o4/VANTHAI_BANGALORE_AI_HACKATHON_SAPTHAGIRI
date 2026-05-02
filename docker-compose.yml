@@ -13,6 +13,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
+      - ./VanthAI_backend:/app                  # Source code mount for hot-reload
       - ./KB:/app/KB:ro                        # KB markdown — read-only mount
     restart: unless-stopped
 

@@ -64,8 +64,9 @@ async def cloudcare_voice_endpoint(
     page_markdown = load_page_markdown_from_disk(page, kb_base="/app/KB")
     page_ctx = f"\n\n[CURRENT PAGE]\nThe user is currently on: {page}\nDo NOT offer to navigate there — the user is already there. Focus on helping with what that page provides."
     kb_ctx = f"\n\n[PAGE KNOWLEDGE]\n{page_markdown}" if page_markdown else ""
+    patient_ctx = f"\n\n[PATIENT CONTEXT]\nPatient: 1 (Rajesh Kumar)\nUse this ID for all database queries."
     
-    system_prompt = _CLOUDCARE_SYSTEM_PROMPT + page_ctx + kb_ctx
+    system_prompt = _CLOUDCARE_SYSTEM_PROMPT + page_ctx + kb_ctx + patient_ctx
     
     handler = GeminiLiveVoiceHandler(
         websocket=websocket,
