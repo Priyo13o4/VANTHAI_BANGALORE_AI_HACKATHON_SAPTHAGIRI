@@ -25,6 +25,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import InsightsIcon from '@mui/icons-material/Insights';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
+import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
 
 const MOCK_HOSPITAL = { name: "City General Hospital" };
 
@@ -249,10 +250,10 @@ export default function MuiHospitalLayout() {
           mt: 8,
         }}
       >
-        {/* Page blur overlay (used by Driver.js) */}
-        <div id="page-blur-overlay" className="vanthai-blur-overlay" />
         <Outlet />
       </Box>
+
+      <SpotlightOverlay />
       <VanthAIChatWidget app="cloudcare" />
     </Box>
   );

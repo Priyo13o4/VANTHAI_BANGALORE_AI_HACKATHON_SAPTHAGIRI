@@ -30,6 +30,7 @@ import {
   LocalHospital,
 } from '@mui/icons-material';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
+import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
 
 const drawerWidth = 260;
 
@@ -281,11 +282,10 @@ export default function MuiDoctorLayout() {
           mt: 8,
         }}
       >
-        {/* Page blur overlay (used by Driver.js) */}
-        <div id="page-blur-overlay" className="vanthai-blur-overlay" />
         <Outlet />
       </Box>
 
+      <SpotlightOverlay />
       <VanthAIChatWidget app="cloudcare" />
     </Box>
   );

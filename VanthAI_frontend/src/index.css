@@ -16,7 +16,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Driver.js page blur overlay ────────────────────────────────────────── */
+/* ── Legacy blur overlay (kept for backward compat with other layouts) ───── */
 .vanthai-blur-overlay {
   position: fixed;
   inset: 0;
@@ -31,32 +31,6 @@ body {
   backdrop-filter: blur(4px);
   background: rgba(0, 0, 0, 0.35);
   pointer-events: auto;
-}
-
-/* ── Shepherd.js theme overrides (to match VanthAI brand) ───────────────── */
-.shepherd-element {
-  border-radius: 16px !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
-  font-family: 'Inter', sans-serif !important;
-}
-
-.shepherd-text { font-size: 0.875rem; line-height: 1.6; }
-.shepherd-title { font-size: 1rem; font-weight: 600; }
-
-.shepherd-button {
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 0.8rem !important;
-}
-
-.shepherd-button-primary {
-  background: #2563eb !important;
-  color: #fff !important;
-}
-
-.shepherd-button-secondary {
-  background: #f1f5f9 !important;
-  color: #334155 !important;
 }
 
 /* ── Autofill highlight (formHelpers.ts) ─────────────────────────────────── */
