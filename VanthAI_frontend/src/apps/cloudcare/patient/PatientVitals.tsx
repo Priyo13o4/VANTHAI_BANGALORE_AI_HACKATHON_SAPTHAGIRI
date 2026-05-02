@@ -180,11 +180,11 @@ export default function PatientVitals() {
     () =>
       latestData
         ? [
-            { name: 'Heart Rate', value: latestData.heartRate },
-            { name: 'Oxygen Level', value: latestData.oxygenLevel },
-            { name: 'Temperature', value: Math.round(latestData.temperature * 10) },
-            { name: 'Steps (100s)', value: Math.round(latestData.steps / 100) },
-          ]
+          { name: 'Heart Rate', value: latestData.heartRate },
+          { name: 'Oxygen Level', value: latestData.oxygenLevel },
+          { name: 'Temperature', value: Math.round(latestData.temperature * 10) },
+          { name: 'Steps (100s)', value: Math.round(latestData.steps / 100) },
+        ]
         : [],
     [latestData]
   );
@@ -214,420 +214,268 @@ export default function PatientVitals() {
   const heartStatusLabel = heartStatus?.status ?? 'Normal';
 
   return (
-    <>
-      <Grid container spacing={3}>
-        {/* Page Header */}
-        <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 600 }} gutterBottom>
-                Wearables & Sensors
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Real-time health monitoring from connected devices
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              startIcon={syncing ? <SyncIcon className="animate-spin" /> : <SyncIcon />}
-              onClick={handleSync}
-              disabled={syncing}
-            >
-              Sync Data
-            </Button>
-          </Box>
-        </Grid>
+    <Box sx={{ pb: 4 }}>
+      {/* 1. Header & Sync Section */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 4,
+        flexWrap: 'wrap',
+        gap: 2
+      }}>
+        <Box>
+          <Typography variant="h5" fontWeight="700" color="text.primary">
+            Health Monitoring
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Real-time vitals and historical trends from your connected devices
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={syncing ? <SyncIcon className="animate-spin" /> : <SyncIcon />}
+          onClick={handleSync}
+          disabled={syncing}
+          sx={{ 
+            borderRadius: 2, 
+            px: 4, 
+            height: 48,
+            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+          }}
+        >
+          {syncing ? 'Syncing...' : 'Sync Data'}
+        </Button>
+      </Box>
 
-        {/* Health Alerts */}
-        {latestData && (
-          <>
-            {(latestData.heartRate && (latestData.heartRate < 60 || latestData.heartRate > 100)) && (
-              <Grid item xs={12}>
-                <Alert 
-                  severity={heartStatus?.severity ?? 'warning'}
-                  icon={<WarningIcon />}
-                >
-                  <AlertTitle>Heart Rate Alert</AlertTitle>
-                  Your heart rate is {heartStatusLabel.toLowerCase()} at {latestData.heartRate} BPM. 
-                  {latestData.heartRate < 60 && ' Consider consulting your doctor if this persists.'}
-                  {latestData.heartRate > 100 && ' Consider resting and staying hydrated.'}
-                </Alert>
-              </Grid>
-            )}
-            {(latestData.oxygenLevel && latestData.oxygenLevel < 95) && (
-              <Grid item xs={12}>
-                <Alert severity="error" icon={<WarningIcon />}>
-                  <AlertTitle>Low Oxygen Level</AlertTitle>
-                  Your oxygen saturation is at {latestData.oxygenLevel}%. Normal range is 95-100%. 
-                  Please seek medical attention if this persists or you feel short of breath.
-                </Alert>
-              </Grid>
-            )}
-          </>
-        )}
+      {/* 2. Health Alerts */}
+      {latestData && (
+        <Box sx={{ mb: 4 }}>
+          {(latestData.heartRate < 60 || latestData.heartRate > 100) && (
+            <Alert severity={heartStatus?.severity ?? 'warning'} sx={{ mb: 2, borderRadius: 2 }}>
+              <AlertTitle>Heart Rate Alert</AlertTitle>
+              Your heart rate is {heartStatusLabel.toLowerCase()} at {latestData.heartRate} BPM.
+            </Alert>
+          )}
+          {latestData.oxygenLevel < 95 && (
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              <AlertTitle>Low Oxygen Level</AlertTitle>
+              Your oxygen saturation is at {latestData.oxygenLevel}%. Normal range is 95-100%.
+            </Alert>
+          )}
+        </Box>
+      )}
 
-        {/* Metric Cards */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent>
-              {loadingLatest ? (
+      {/* 3. Consolidated Overview Row (Rebalanced 5 Cards) */}
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        {/* Heart Rate */}
+        <Grid item xs={12} sm={6} md={2}>
+          <Card sx={{ borderRadius: 4, height: '100%', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <CardContent sx={{ p: 2 }}>
+              {loadingLatest ? <Skeleton variant="rectangular" height={80} /> : (
                 <>
-                  <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
-                  <Skeleton variant="text" height={40} />
-                  <Skeleton variant="text" height={24} />
-                </>
-              ) : (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <HeartIcon sx={{ fontSize: 48, color: COLORS.heartRate, mr: 2 }} />
-                    <Box>
-                      <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                        {latestData?.heartRate || '--'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        BPM
-                      </Typography>
-                    </Box>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                    <HeartIcon sx={{ fontSize: 28, color: COLORS.heartRate }} />
+                    <Chip 
+                      label={heartStatus?.status ?? 'Normal'} 
+                      color={heartStatus?.color ?? 'success'} 
+                      size="small" 
+                      sx={{ fontSize: '0.65rem', height: 18 }}
+                    />
                   </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }} gutterBottom>
+                  <Typography variant="h4" fontWeight="700">{latestData?.heartRate || '--'}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     Heart Rate
+                    {hrTrend === 'up' && <TrendingUpIcon sx={{ fontSize: 12 }} color="error" />}
+                    {hrTrend === 'down' && <TrendingDownIcon sx={{ fontSize: 12 }} color="success" />}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip
-                      label={heartStatus?.status ?? 'N/A'}
-                      color={heartStatus?.color ?? 'default'}
-                      size="small"
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Oxygen */}
+        <Grid item xs={12} sm={6} md={2}>
+          <Card sx={{ borderRadius: 4, height: '100%', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <CardContent sx={{ p: 2 }}>
+              {loadingLatest ? <Skeleton variant="rectangular" height={80} /> : (
+                <>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                    <OxygenIcon sx={{ fontSize: 28, color: COLORS.oxygen }} />
+                    <Chip 
+                      label={oxygenStatus?.status ?? 'Normal'} 
+                      color={oxygenStatus?.color ?? 'success'} 
+                      size="small" 
+                      sx={{ fontSize: '0.65rem', height: 18 }}
                     />
-                    {hrTrend === 'up' && <TrendingUpIcon fontSize="small" color="error" />}
-                    {hrTrend === 'down' && <TrendingDownIcon fontSize="small" color="success" />}
                   </Box>
+                  <Typography variant="h4" fontWeight="700">{latestData?.oxygenLevel || '--'}%</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Oxygen
+                    {o2Trend === 'up' && <TrendingUpIcon sx={{ fontSize: 12 }} color="success" />}
+                    {o2Trend === 'down' && <TrendingDownIcon sx={{ fontSize: 12 }} color="error" />}
+                  </Typography>
                 </>
               )}
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent>
-              {loadingLatest ? (
+        {/* Temperature */}
+        <Grid item xs={12} sm={6} md={2}>
+          <Card sx={{ borderRadius: 4, height: '100%', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <CardContent sx={{ p: 2 }}>
+              {loadingLatest ? <Skeleton variant="rectangular" height={80} /> : (
                 <>
-                  <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
-                  <Skeleton variant="text" height={40} />
-                  <Skeleton variant="text" height={24} />
-                </>
-              ) : (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <OxygenIcon sx={{ fontSize: 48, color: COLORS.oxygen, mr: 2 }} />
-                    <Box>
-                      <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                        {latestData?.oxygenLevel || '--'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        %
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }} gutterBottom>
-                    Oxygen Level
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip
-                      label={oxygenStatus?.status ?? 'N/A'}
-                      color={oxygenStatus?.color ?? 'default'}
-                      size="small"
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                    <MonitorIcon sx={{ fontSize: 28, color: COLORS.temperature }} />
+                    <Chip 
+                      label="Normal" 
+                      color="success" 
+                      size="small" 
+                      sx={{ fontSize: '0.65rem', height: 18 }}
                     />
-                    {o2Trend === 'up' && <TrendingUpIcon fontSize="small" color="success" />}
-                    {o2Trend === 'down' && <TrendingDownIcon fontSize="small" color="error" />}
                   </Box>
+                  <Typography variant="h4" fontWeight="700">{latestData?.temperature?.toFixed(1) || '--'}°F</Typography>
+                  <Typography variant="caption" color="text.secondary">Body Temp</Typography>
                 </>
               )}
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent>
-              {loadingLatest ? (
+        {/* Daily Steps */}
+        <Grid item xs={12} sm={6} md={2}>
+          <Card sx={{ borderRadius: 4, height: '100%', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <CardContent sx={{ p: 2 }}>
+              {loadingLatest ? <Skeleton variant="rectangular" height={80} /> : (
                 <>
-                  <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
-                  <Skeleton variant="text" height={40} />
-                  <Skeleton variant="text" height={24} />
-                </>
-              ) : (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <MonitorIcon sx={{ fontSize: 48, color: COLORS.temperature, mr: 2 }} />
-                    <Box>
-                      <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                        {latestData?.temperature ? latestData.temperature.toFixed(1) : '--'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        °F
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }} gutterBottom>
-                    Temperature
-                  </Typography>
-                  <Chip
-                    label={latestData?.temperature && latestData.temperature >= 97 && latestData.temperature <= 99 ? 'Normal' : 'N/A'}
-                    color={latestData?.temperature && latestData.temperature >= 97 && latestData.temperature <= 99 ? 'success' : 'default'}
-                    size="small"
-                  />
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent>
-              {loadingLatest ? (
-                <>
-                  <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
-                  <Skeleton variant="text" height={40} />
-                  <Skeleton variant="text" height={24} />
-                </>
-              ) : (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <WatchIcon sx={{ fontSize: 48, color: COLORS.steps, mr: 2 }} />
-                    <Box>
-                      <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                        {latestData?.steps ? latestData.steps.toLocaleString() : '--'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        steps
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }} gutterBottom>
-                    Daily Steps
-                  </Typography>
-                  <Chip
-                    label={latestData?.steps && latestData.steps >= 5000 ? 'Active' : 'Low Activity'}
-                    color={latestData?.steps && latestData.steps >= 5000 ? 'success' : 'warning'}
-                    size="small"
-                  />
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Heart Rate Trend Chart */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
-                Heart Rate Trend
-              </Typography>
-              {loadingHistory ? (
-                <Skeleton variant="rectangular" height={300} />
-              ) : chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis domain={[50, 120]} />
-                    <RechartsTooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="heartRate"
-                      stroke={COLORS.heartRate}
-                      strokeWidth={2}
-                      dot={{ fill: COLORS.heartRate }}
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                    <WatchIcon sx={{ fontSize: 28, color: COLORS.steps }} />
+                    <Chip 
+                      label="Active" 
+                      color="success" 
+                      size="small" 
+                      sx={{ fontSize: '0.65rem', height: 18 }}
                     />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography color="text.secondary">No historical data available</Typography>
-                </Box>
+                  </Box>
+                  <Typography variant="h4" fontWeight="700">{latestData?.steps.toLocaleString() || '--'}</Typography>
+                  <Typography variant="caption" color="text.secondary">Daily Steps</Typography>
+                </>
               )}
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Health Metrics Distribution */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
-                Metrics Overview
-              </Typography>
-              {loadingLatest ? (
-                <Skeleton variant="circular" width={250} height={250} sx={{ mx: 'auto' }} />
-              ) : pieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+        {/* Metrics Distribution (Expanded) */}
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ borderRadius: 4, height: '100%', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <CardContent sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" fontWeight="700">Metrics Overview</Typography>
+                <Typography variant="caption" color="text.secondary" display="block">Vitals Distribution</Typography>
+              </Box>
+              <Box sx={{ width: 100, height: 100 }}>
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      labelLine={false}
-                      label={(props) => {
-                        const { name, percent } = props as { name?: string; percent?: number };
-                        return `${name ?? 'Metric'}: ${(((percent ?? 0) * 100)).toFixed(0)}%`;
-                      }}
-                      outerRadius={80}
-                      fill="#8884d8"
+                      innerRadius={25}
+                      outerRadius={38}
+                      paddingAngle={3}
                       dataKey="value"
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip />
                   </PieChart>
                 </ResponsiveContainer>
-              ) : (
-                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography color="text.secondary">No data available</Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Oxygen Level Trend Chart */}
-        <Grid item xs={12}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
-                Oxygen Saturation Trend
-              </Typography>
-              {loadingHistory ? (
-                <Skeleton variant="rectangular" height={300} />
-              ) : chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis domain={[90, 100]} />
-                    <RechartsTooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="oxygen"
-                      stroke={COLORS.oxygen}
-                      strokeWidth={2}
-                      dot={{ fill: COLORS.oxygen }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography color="text.secondary">No historical data available</Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Connected Devices */}
-        <Grid item xs={12}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-                Connected Devices
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          Smartwatch Pro
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Model: HCG-W200
-                        </Typography>
-                      </Box>
-                      <CheckIcon color="success" />
-                    </Box>
-                    <Box sx={{ mt: 2 }}>
-                      <Chip label="Connected" color="success" size="small" sx={{ mr: 1 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Last sync: {latestData?.timestamp ? formatDate(new Date(latestData.timestamp)) : 'Never'}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={4}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          Blood Pressure Monitor
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Model: HCG-BP100
-                        </Typography>
-                      </Box>
-                      <CheckIcon color="success" />
-                    </Box>
-                    <Box sx={{ mt: 2 }}>
-                      <Chip label="Connected" color="success" size="small" sx={{ mr: 1 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Battery: 85%
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={4}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      opacity: 0.6,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          Fitness Band
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Model: HCG-FB50
-                        </Typography>
-                      </Box>
-                      <WarningIcon color="disabled" />
-                    </Box>
-                    <Box sx={{ mt: 2 }}>
-                      <Chip label="Offline" color="default" size="small" sx={{ mr: 1 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Last seen: 2 days ago
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-    </>
+
+
+      {/* 4. Heart Rate Historical Chart (Full Width) */}
+      <Card sx={{ borderRadius: 4, mb: 4, border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight="600" gutterBottom>Heart Rate Historical Trend</Typography>
+          <Box sx={{ height: 350, mt: 2 }}>
+            {loadingHistory ? <Skeleton variant="rectangular" height="100%" /> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
+                  <YAxis domain={[50, 120]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="heartRate" 
+                    stroke={COLORS.heartRate} 
+                    strokeWidth={3} 
+                    dot={{ r: 4, fill: COLORS.heartRate, strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 5. Oxygen Historical Chart (Full Width) */}
+      <Card sx={{ borderRadius: 4, mb: 4, border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight="600" gutterBottom>Oxygen Saturation Historical Trend</Typography>
+          <Box sx={{ height: 350, mt: 2 }}>
+            {loadingHistory ? <Skeleton variant="rectangular" height="100%" /> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
+                  <YAxis domain={[90, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="oxygen" 
+                    stroke={COLORS.oxygen} 
+                    strokeWidth={3} 
+                    dot={{ r: 4, fill: COLORS.oxygen, strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 7. Connected Devices */}
+      <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>Connected Devices</Typography>
+      <Grid container spacing={2}>
+        {['Smartwatch Pro', 'Blood Pressure Monitor', 'Fitness Band'].map((device, i) => (
+          <Grid item xs={12} sm={4} key={device}>
+            <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: 'none', opacity: i === 2 ? 0.6 : 1 }}>
+              <Box display="flex" justifyContent="space-between" mb={1}>
+                <Typography variant="subtitle2" fontWeight="600">{device}</Typography>
+                <CheckIcon size="small" color={i === 2 ? 'disabled' : 'success'} />
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                {i === 2 ? 'Last seen 2 days ago' : 'Connected & Syncing'}
+              </Typography>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 }

@@ -60,21 +60,21 @@ const router = createBrowserRouter([
     element: <MuiDashboardLayout />,
     children: [
       { index: true, element: <PatientDashboard /> },
-      { path: 'patient',               element: <PatientDashboard /> },
-      { path: 'patient/records',       element: <PatientRecords /> },
-      { path: 'patient/appointments',  element: <PatientAppointments /> },
-      { path: 'patient/vitals',        element: <PatientVitals /> },
-      { path: 'patient/wearables',     element: <PatientVitals /> }, // alias
+      { path: 'patient', element: <PatientDashboard /> },
+      { path: 'patient/records', element: <PatientRecords /> },
+      { path: 'patient/appointments', element: <PatientAppointments /> },
+      { path: 'patient/vitals', element: <PatientVitals /> },
+      { path: 'patient/wearables', element: <PatientVitals /> }, // alias
       { path: 'patient/prescriptions', element: <PatientPrescriptions /> },
-      
-      { path: 'doctor',                element: <DoctorDashboard /> },
-      { path: 'doctor/patients',       element: <DoctorPatients /> },
-      { path: 'doctor/schedule',       element: <DoctorSchedule /> },
-      { path: 'doctor/profile',        element: <DoctorProfile /> },
 
-      { path: 'hospital',              element: <HospitalDashboard /> },
-      { path: 'hospital/resources',    element: <HospitalResources /> },
-      { path: 'hospital/staff',        element: <HospitalStaff /> },
+      { path: 'doctor', element: <DoctorDashboard /> },
+      { path: 'doctor/patients', element: <DoctorPatients /> },
+      { path: 'doctor/schedule', element: <DoctorSchedule /> },
+      { path: 'doctor/profile', element: <DoctorProfile /> },
+
+      { path: 'hospital', element: <HospitalDashboard /> },
+      { path: 'hospital/resources', element: <HospitalResources /> },
+      { path: 'hospital/staff', element: <HospitalStaff /> },
       { path: 'hospital/surveillance', element: <HospitalSurveillance /> },
     ],
   },
@@ -85,10 +85,10 @@ const router = createBrowserRouter([
     element: <ITRLayout />,
     children: [
       { index: true, element: <ITROverview /> },
-      { path: 'personal',        element: <PersonalInfo /> },
-      { path: 'salary',          element: <SalaryIncome /> },
-      { path: 'deductions',      element: <Deductions /> },
-      { path: 'tax-paid',        element: <TaxPaid /> },
+      { path: 'personal', element: <PersonalInfo /> },
+      { path: 'salary', element: <SalaryIncome /> },
+      { path: 'deductions', element: <Deductions /> },
+      { path: 'tax-paid', element: <TaxPaid /> },
     ],
   },
 ]);
