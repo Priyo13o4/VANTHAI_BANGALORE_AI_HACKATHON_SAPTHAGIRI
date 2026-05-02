@@ -24,7 +24,7 @@ interface Props {
 export default function VanthAIChatWidget({ app }: Props) {
   const [open, setOpen] = useState(false);
   
-  const STORAGE_KEY = `vanthai_chat_history_${app}`;
+  const STORAGE_KEY = `vanthai_chat_history_${app}_teal`;
   
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -74,11 +74,11 @@ export default function VanthAIChatWidget({ app }: Props) {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last && last.role === 'assistant' && last.id === streamingIdRef.current) {
-          return [...prev.slice(0, -1), { ...last, content: last.content + envelope.text }];
+          return [...prev.slice(0, -1), { ...last, content: last.content + (envelope as any).content }];
         }
         const newId = Math.random().toString(36).substring(7);
         streamingIdRef.current = newId;
-        return [...prev, { id: newId, role: 'assistant', content: envelope.text, isStreaming: true }];
+        return [...prev, { id: newId, role: 'assistant', content: (envelope as any).content, isStreaming: true }];
       });
     } else if (envelope.type === 'done') {
       setMessages((prev) => prev.map((m) => m.id === streamingIdRef.current ? { ...m, isStreaming: false } : m));
@@ -86,16 +86,16 @@ export default function VanthAIChatWidget({ app }: Props) {
       setIsThinking(false);
     } else if (envelope.type === 'thinking') {
       setIsThinking(true);
-      if (envelope.text) {
+      if ((envelope as any).content) {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last && last.role === 'assistant' && last.id === streamingIdRef.current) {
-            const toolCalls = [...(last.toolCalls || []), envelope.text as string];
+            const toolCalls = [...(last.toolCalls || []), (envelope as any).content as string];
             return [...prev.slice(0, -1), { ...last, toolCalls }];
           }
           const newId = Math.random().toString(36).substring(7);
           streamingIdRef.current = newId;
-          return [...prev, { id: newId, role: 'assistant', content: '', toolCalls: [envelope.text as string] }];
+          return [...prev, { id: newId, role: 'assistant', content: '', toolCalls: [(envelope as any).content as string] }];
         });
       }
     } else if (envelope.type === 'action') {
@@ -124,7 +124,10 @@ export default function VanthAIChatWidget({ app }: Props) {
       setMessages(prev => prev.map(m => ({ ...m, isStreaming: false })));
     },
     onToolCall: (name, args) => {
-      dispatchAction({ type: 'action', action: name, args } as ActionEnvelope);
+      // Correctly map Gemini tool calls to the dispatcher
+      if (name === 'navigate_to' && args.path) {
+        dispatchAction({ type: 'action', action: 'navigate', url: args.path } as any);
+      }
     }
   });
 
@@ -142,22 +145,15 @@ export default function VanthAIChatWidget({ app }: Props) {
     const text = input.trim();
     if (!text) return;
     
-    setMessages((prev) => [...prev, { id: Math.random().toString(36).substring(7), role: 'user', content: text }]);
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: text }]);
     setInput('');
-<<<<<<< HEAD
     
-=======
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: 'user', content: text },
-    ]);
->>>>>>> origin/Vishnu
     if (connectionState !== 'connected') {
       console.warn('Cannot send message: Not connected to Vanth AI');
       return;
     }
     setIsThinking(true);
-    sendMessage(text);
+    sendMessage(JSON.stringify({ text, current_page: window.location.pathname }));
   };
 
   const handleClearChat = () => {
@@ -173,17 +169,13 @@ export default function VanthAIChatWidget({ app }: Props) {
   };
 
   /* ── Soundwave bars for voice mode ── */
-  const waveBars = Array.from({ length: 5 }, (_, i) => i);
+  const waveBars = Array.from({ length: 7 }, (_, i) => i);
 
   return (
     <>
-<<<<<<< HEAD
-=======
-      {/* ── Soundwave Keyframes ── */}
->>>>>>> origin/Vishnu
       <style>{`
         @keyframes vanthai-wave {
-          0%, 100% { transform: scaleY(0.25); }
+          0%, 100% { transform: scaleY(0.3); }
           50% { transform: scaleY(1); }
         }
       `}</style>
@@ -201,76 +193,48 @@ export default function VanthAIChatWidget({ app }: Props) {
         {open ? <X size={22} /> : <Bot size={24} />}
       </button>
 
-<<<<<<< HEAD
-      {/* ── Main Chat Window ── */}
-      <div className={clsx(
-        'fixed right-6 bottom-24 z-[9998] w-[380px] h-[600px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-teal-100/50 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]',
-        open ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95 pointer-events-none'
-      )}>
-        
-        {/* ── Header ── */}
-        <div className="bg-teal-700 px-6 py-5 flex items-center justify-between text-white shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center ring-1 ring-white/30">
-              <Bot size={22} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold tracking-tight">Vanth AI</h2>
-              <div className="flex items-center gap-1.5">
-                <span className={clsx('w-2 h-2 rounded-full', connectionState === 'connected' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse')} />
-                <span className="text-[10px] font-medium text-teal-100 uppercase tracking-widest">{connectionState === 'connected' ? 'Live' : 'Syncing'}</span>
-=======
       {/* ── Chat Panel ── */}
       <div
         data-vanthai-id="vanthai-chat-panel"
         className={clsx(
-          'fixed z-[9999] flex flex-col overflow-hidden transition-all duration-400 ease-out origin-bottom-right',
+          'fixed z-[9999] flex flex-col overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]',
           'bg-teal-50 border border-teal-200/60 shadow-2xl shadow-teal-900/10',
           // Desktop
-          'sm:bottom-5 sm:right-6 sm:w-[420px] sm:h-[calc(100vh-40px)] sm:rounded-2xl',
+          'sm:bottom-5 sm:right-6 sm:w-[420px] sm:h-[calc(100vh-120px)] sm:rounded-3xl',
           // Mobile
-          'bottom-0 right-0 w-full h-full rounded-none sm:rounded-2xl',
+          'bottom-0 right-0 w-full h-full rounded-none sm:rounded-3xl',
           open ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
         )}
       >
         {/* ── Header ── */}
-        <div className="px-5 py-4 border-b border-teal-200/50 bg-teal-100/50 flex items-center justify-between">
+        <div className="px-5 py-5 border-b border-teal-200/50 bg-teal-700 flex items-center justify-between text-white shadow-sm">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-teal-700 flex items-center justify-center text-white ring-1 ring-teal-600/40 shadow-sm">
-                <Bot size={18} />
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white ring-1 ring-white/30 shadow-sm">
+                <Bot size={20} />
               </div>
               {connectionState === 'connected' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-teal-50 rounded-full"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-teal-700 rounded-full"></span>
               )}
             </div>
             <div>
-              <div className="text-slate-900 font-semibold text-sm tracking-tight">Vanth AI</div>
-              <div className={clsx('text-xs font-medium', connectionState === 'connected' ? 'text-emerald-600' : 'text-slate-400')}>
-                {connectionState === 'connected' ? 'Online' : connectionState === 'connecting' ? 'Connecting…' : 'Offline'}
->>>>>>> origin/Vishnu
+              <div className="text-white font-bold text-sm tracking-tight leading-none mb-1">Vanth AI</div>
+              <div className={clsx('text-[10px] font-bold uppercase tracking-widest', connectionState === 'connected' ? 'text-emerald-300' : 'text-teal-200 animate-pulse')}>
+                {connectionState === 'connected' ? 'Live Brain' : 'Syncing...'}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={handleClearChat}
-<<<<<<< HEAD
               className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-=======
-              className="p-2 text-teal-600/60 hover:text-teal-800 hover:bg-teal-100 rounded-lg transition-colors"
->>>>>>> origin/Vishnu
               title="New Chat"
             >
               <RotateCcw size={16} />
             </button>
             <button
               onClick={() => setOpen(false)}
-<<<<<<< HEAD
               className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-=======
-              className="p-2 text-teal-600/60 hover:text-teal-800 hover:bg-teal-100 rounded-lg transition-colors"
->>>>>>> origin/Vishnu
               title="Close"
             >
               <X size={16} />
@@ -279,14 +243,14 @@ export default function VanthAIChatWidget({ app }: Props) {
         </div>
 
         {/* ── Messages ── */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-gradient-to-b from-teal-50/50 to-teal-50">
+        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 bg-gradient-to-b from-teal-50/50 to-white">
           {messages.map((msg) => (
             <div key={msg.id} className={clsx('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
               <div className={clsx(
-                'max-w-[85%] px-4 py-3 text-sm leading-relaxed',
+                'max-w-[85%] px-4 py-3 text-[14px] leading-relaxed shadow-sm',
                 msg.role === 'user'
-                  ? 'bg-teal-700 text-white rounded-2xl rounded-br-md shadow-sm shadow-teal-900/10 ring-1 ring-teal-600/20'
-                  : 'bg-white border border-teal-200/60 text-slate-800 rounded-2xl rounded-bl-md shadow-sm shadow-teal-200/30'
+                  ? 'bg-teal-700 text-white rounded-2xl rounded-tr-none ring-1 ring-teal-600/20'
+                  : 'bg-white border border-teal-100 text-slate-800 rounded-2xl rounded-tl-none ring-1 ring-slate-100'
               )}>
                 
                 {/* Content */}
@@ -300,7 +264,7 @@ export default function VanthAIChatWidget({ app }: Props) {
                   <div className="mt-3 pt-2 border-t border-teal-100/80">
                     <button
                       onClick={() => toggleThinkingBox(msg.id)}
-                      className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-teal-700 transition-colors"
+                      className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-teal-700 transition-colors uppercase tracking-tight"
                     >
                       <BrainCircuit size={13} />
                       {expandedThinking[msg.id] ? 'Hide process' : 'Show process'}
@@ -314,12 +278,12 @@ export default function VanthAIChatWidget({ app }: Props) {
                           const isError = tc.includes('(error)');
                           
                           return (
-                            <div key={i} className="flex items-start gap-2 text-xs">
+                            <div key={i} className="flex items-start gap-2 text-[11px]">
                               <span className={clsx(
-                                "mt-0.5 w-1.5 h-1.5 rounded-full shrink-0",
+                                "mt-1 w-1.5 h-1.5 rounded-full shrink-0",
                                 isSuccess ? "bg-emerald-500" : isError ? "bg-red-400" : "bg-teal-500 animate-pulse"
                               )}></span>
-                              <span className="text-slate-500 font-mono tracking-tight">{tc.replace(' (success)', '').replace(' (error)', '')}</span>
+                              <span className="text-slate-600 font-mono tracking-tight">{tc.replace(' (success)', '').replace(' (error)', '')}</span>
                             </div>
                           );
                         })}
@@ -328,19 +292,22 @@ export default function VanthAIChatWidget({ app }: Props) {
                   </div>
                 )}
               </div>
+              <span className="text-[10px] text-slate-400 mt-1 px-1 font-medium">
+                {msg.role === 'user' ? 'You' : 'Vanth AI'}
+              </span>
             </div>
           ))}
           
           {/* Thinking State */}
           {isThinking && (
             <div className="flex justify-start">
-              <div className="bg-white border border-teal-200/60 rounded-2xl rounded-bl-md px-4 py-3 text-sm flex items-center gap-3 shadow-sm">
+              <div className="bg-white border border-teal-200/60 rounded-2xl rounded-tl-none px-4 py-3 text-sm flex items-center gap-3 shadow-sm">
                 <div className="flex gap-1">
                   <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                   <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
                   <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                 </div>
-                <span className="text-slate-400 text-xs font-medium">Thinking…</span>
+                <span className="text-slate-400 text-xs font-medium italic">Thinking…</span>
               </div>
             </div>
           )}
@@ -348,50 +315,41 @@ export default function VanthAIChatWidget({ app }: Props) {
         </div>
 
         {/* ── Input Area ── */}
-        <div className="p-4 bg-teal-100/40 border-t border-teal-200/50">
+        <div className="p-4 bg-teal-100/20 border-t border-teal-200/50">
           {isVoiceMode ? (
             /* ── Voice Listening Mode ── */
-            <div className="flex flex-col items-center py-5">
-<<<<<<< HEAD
-=======
+            <div className="flex flex-col items-center py-6 bg-white rounded-2xl shadow-inner border border-teal-100/50">
               {/* Soundwave Visualization */}
->>>>>>> origin/Vishnu
-              <div className="flex items-center justify-center gap-[5px] h-16 mb-4">
+              <div className="flex items-center justify-center gap-[6px] h-12 mb-6">
                 {waveBars.map((i) => (
                   <div
                     key={i}
                     className="w-[4px] rounded-full bg-teal-500"
                     style={{
                       height: '100%',
-                      animation: 'vanthai-wave 1.2s ease-in-out infinite',
-                      animationDelay: `${i * 0.15}s`,
+                      animation: 'vanthai-wave 1s ease-in-out infinite',
+                      animationDelay: `${i * 0.12}s`,
                       transformOrigin: 'center',
-                      opacity: 0.5 + (i % 3) * 0.15,
+                      opacity: 0.6 + (i % 3) * 0.1,
                     }}
                   />
                 ))}
               </div>
-<<<<<<< HEAD
-              <p className="text-xs text-teal-700 font-medium tracking-wide mb-4 uppercase tracking-tighter">
+              <p className="text-[11px] text-teal-700 font-bold tracking-widest mb-6 uppercase">
                 {voiceStatus === 'streaming' ? 'Vanth AI is listening…' : 'Connecting Voice…'}
               </p>
-              <button
-                onClick={handleToggleVoice}
-=======
-              <p className="text-xs text-teal-700 font-medium tracking-wide mb-4">Listening…</p>
               {/* Stop Button */}
               <button
-                onClick={() => setIsVoiceMode(false)}
->>>>>>> origin/Vishnu
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-teal-700 rounded-xl border border-teal-200/80 shadow-sm hover:bg-teal-50 transition-colors text-sm font-medium ring-1 ring-teal-200/40"
+                onClick={handleToggleVoice}
+                className="flex items-center gap-2 px-6 py-2.5 bg-rose-600 text-white rounded-xl shadow-lg shadow-rose-900/20 hover:bg-rose-700 transition-all text-xs font-bold uppercase tracking-widest"
               >
-                <MicOff size={16} />
-                Stop listening
+                <MicOff size={14} />
+                End Conversation
               </button>
             </div>
           ) : (
             /* ── Text Input Mode ── */
-            <div className="relative flex items-end gap-2 bg-white rounded-xl border border-teal-200/60 p-1.5 transition-all focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100 focus-within:shadow-sm">
+            <div className="relative flex items-end gap-2 bg-white rounded-2xl border border-teal-200/60 p-1.5 transition-all focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100/50">
               <textarea
                 data-vanthai-id="vanthai-chat-input"
                 value={input}
@@ -402,45 +360,31 @@ export default function VanthAIChatWidget({ app }: Props) {
                     handleSend();
                   }
                 }}
-                placeholder="Ask anything…"
+                placeholder="How can I help you today?"
                 className="flex-1 max-h-32 min-h-[44px] bg-transparent text-slate-800 px-3 py-2.5 text-sm outline-none resize-none placeholder-slate-400"
                 rows={1}
               />
-              {/* Mic Button — Equal prominence */}
+              {/* Mic Button */}
               <button
-                data-vanthai-id="vanthai-voice-toggle"
                 onClick={() => setIsVoiceMode(true)}
-                className="p-2.5 text-teal-600 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors shrink-0 mb-0.5 ring-1 ring-teal-200/60"
+                className="p-2.5 text-teal-600 bg-teal-50 rounded-xl hover:bg-teal-100 transition-colors shrink-0 mb-0.5"
                 title="Voice input"
               >
-                <Mic size={16} />
+                <Mic size={18} />
               </button>
               {/* Send Button */}
               <button
-                data-vanthai-id="vanthai-voice-toggle"
-                onClick={handleToggleVoice}
-                className="p-2.5 text-teal-600 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors shrink-0 mb-0.5 ring-1 ring-teal-200/60"
-                title="Voice input"
-              >
-                <Mic size={16} />
-              </button>
-              <button
-                data-vanthai-id="vanthai-chat-send"
                 onClick={handleSend}
                 disabled={!input.trim()}
-                className="p-2.5 bg-teal-700 text-white rounded-lg hover:bg-teal-600 disabled:opacity-25 transition-colors shrink-0 mb-0.5 mr-0.5 ring-1 ring-teal-600/30"
+                className="p-2.5 bg-teal-700 text-white rounded-xl hover:bg-teal-800 disabled:opacity-20 transition-all shadow-md shadow-teal-900/20 shrink-0 mb-0.5 mr-0.5"
               >
-                <Send size={16} />
+                <Send size={18} />
               </button>
             </div>
           )}
           
           <div className="mt-3 text-center">
-<<<<<<< HEAD
-            <p className="text-[10px] text-teal-600/50 tracking-wide uppercase font-semibold">Vanth AI — Generative Intelligence</p>
-=======
-            <p className="text-[10px] text-teal-600/50 tracking-wide">Vanth AI may make mistakes · Verify important information</p>
->>>>>>> origin/Vishnu
+            <p className="text-[10px] text-teal-600/40 tracking-wider font-medium uppercase">Vanth AI — Personalized Intelligence</p>
           </div>
         </div>
       </div>
