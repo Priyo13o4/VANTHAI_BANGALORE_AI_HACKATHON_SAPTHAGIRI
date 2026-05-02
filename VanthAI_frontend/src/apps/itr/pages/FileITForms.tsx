@@ -124,9 +124,9 @@ export default function FileITForms() {
                     {form.desc}
                   </p>
                 </div>
-                <button className="text-[12px] font-bold text-[#1d4ed8] hover:underline shrink-0 pt-0.5">
+                <Link to="/itr/file-form-18" className="text-[12px] font-bold text-[#1d4ed8] hover:underline shrink-0 pt-0.5">
                   File Now
-                </button>
+                </Link>
               </div>
             ))}
           </div>
