@@ -52,6 +52,7 @@ import Form18Sections from './apps/itr/pages/Form18Sections';
 import AssesseeDetails from './apps/itr/pages/AssesseeDetails';
 import BusinessDetails from './apps/itr/pages/BusinessDetails';
 import ProjectDetails from './apps/itr/pages/ProjectDetails';
+import OtherDetails from './apps/itr/pages/OtherDetails';
 import ConditionsFulfillment from './apps/itr/pages/ConditionsFulfillment';
 import FormAttachments from './apps/itr/pages/FormAttachments';
 import FormDeclaration from './apps/itr/pages/FormDeclaration';
@@ -105,6 +106,7 @@ const router = createBrowserRouter([
       { path: 'assessee-details', element: <AssesseeDetails /> },
       { path: 'business-details', element: <BusinessDetails /> },
       { path: 'project-details', element: <ProjectDetails /> },
+      { path: 'other-details', element: <OtherDetails /> },
       { path: 'conditions-fulfillment', element: <ConditionsFulfillment /> },
       { path: 'attachments', element: <FormAttachments /> },
       { path: 'declaration', element: <FormDeclaration /> },

@@ -42,6 +42,7 @@ export default function Form18Sections() {
               const isAssesseeSection = section.title === 'Particulars of the assessee';
               const isBusinessSection = section.title === 'Particulars of the specified business';
               const isProjectSection = section.title === 'Details of proposed project';
+              const isOtherDetailsSection = section.title === 'Other details';
               const isConditionsSection = section.title === 'Fulfilment of conditions';
               const isAttachmentsSection = section.title === 'Attachments';
               const isDeclarationSection = section.title === 'Declaration';
@@ -58,6 +59,9 @@ export default function Form18Sections() {
               } else if (isProjectSection) {
                 isCompleted = !!localStorage.getItem('form18_project_details');
                 path = '/itr/project-details';
+              } else if (isOtherDetailsSection) {
+                isCompleted = !!localStorage.getItem('form18_other_details');
+                path = '/itr/other-details';
               } else if (isConditionsSection) {
                 isCompleted = !!localStorage.getItem('form18_conditions_details');
                 path = '/itr/conditions-fulfillment';
