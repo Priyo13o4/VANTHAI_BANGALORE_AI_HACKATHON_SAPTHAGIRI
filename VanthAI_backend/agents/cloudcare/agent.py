@@ -9,7 +9,7 @@ from agents.base_agent import build_agent_graph, run_agent
 from agents.cloudcare.prompts import build_system_prompt, load_page_markdown_from_disk
 from agents.cloudcare.tools import CLOUDCARE_TOOLS
 from core.redis_client import append_message, get_session, update_session_page
-from core.websocket import BaseWebSocketHandler
+from core.http_chat import HTTPChatHandler
 
 logger = structlog.get_logger(__name__)
 
@@ -17,7 +17,7 @@ logger = structlog.get_logger(__name__)
 _CLOUDCARE_GRAPH = build_agent_graph(CLOUDCARE_TOOLS)
 
 
-class CloudCareChatHandler(BaseWebSocketHandler):
+class CloudCareChatHandler(HTTPChatHandler):
     """
     Handles CloudCare chat WebSocket connections.
     Each incoming message:
@@ -28,16 +28,9 @@ class CloudCareChatHandler(BaseWebSocketHandler):
       5. Appends messages to Redis session
     """
 
-    async def handle_message(self, raw: str) -> None:
-        try:
-            data = json.loads(raw)
-            text = data.get("text", "").strip()
-            current_page = data.get("current_page", "/cloudcare")
-        except (json.JSONDecodeError, AttributeError):
-            text = raw.strip()
-            current_page = "/cloudcare"
-
+    async def handle_message(self, text: str, current_page: str) -> None:
         if not text:
+            await self.send_done()
             return
 
         session = await get_session(self.session_id) or {"messages": [], "current_page": current_page}
