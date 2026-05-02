@@ -10,9 +10,12 @@ from pathlib import Path
 
 import structlog
 from langchain_core.tools import tool
+from sqlalchemy import select
 
 from agents.cloudcare.prompts import load_page_markdown_from_disk
 from core.config import settings
+from core.db import AsyncSessionLocal
+from models.cloudcare import Doctor, HealthRecord
 
 logger = structlog.get_logger(__name__)
 
@@ -144,6 +147,49 @@ def query_latest_vitals(patient_id: int) -> str:
     return json.dumps(vitals)
 
 
+@tool
+async def query_health_records(patient_id: int) -> str:
+    """
+    Query the complete medical history (health records) for a patient.
+    Returns record type, date, description, diagnosis, treatment, and doctor name.
+
+    Args:
+        patient_id: Integer patient ID
+    Returns:
+        JSON array of health records.
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            # Join with doctors to get the doctor's name
+            stmt = (
+                select(HealthRecord, Doctor.name)
+                .join(Doctor, HealthRecord.doctor_id == Doctor.id, isouter=True)
+                .where(HealthRecord.patient_id == patient_id)
+                .order_by(HealthRecord.record_date.desc())
+            )
+            result = await session.execute(stmt)
+            records = []
+            for row in result:
+                hr: HealthRecord = row[0]
+                doc_name = row[1] or "Unknown"
+                records.append({
+                    "id": hr.id,
+                    "date": hr.record_date.strftime("%Y-%m-%d %H:%M"),
+                    "type": hr.record_type,
+                    "description": hr.description,
+                    "diagnosis": hr.diagnosis,
+                    "treatment": hr.treatment,
+                    "doctor": doc_name,
+                    "hospital": hr.hospital
+                })
+            
+            logger.info("tool.query_health_records", patient_id=patient_id, count=len(records))
+            return json.dumps(records)
+        except Exception as exc:
+            logger.error("tool.query_health_records.error", error=str(exc))
+            return json.dumps({"error": f"Database query failed: {exc}"})
+
+
 # All tools exported as a list for LangGraph bind_tools()
 CLOUDCARE_TOOLS = [
     load_page_markdown,
@@ -151,4 +197,5 @@ CLOUDCARE_TOOLS = [
     query_upcoming_appointments,
     query_active_prescriptions,
     query_latest_vitals,
+    query_health_records,
 ]

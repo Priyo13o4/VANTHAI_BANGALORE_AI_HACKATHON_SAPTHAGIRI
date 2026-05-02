@@ -48,6 +48,9 @@ export default function VanthAIChatWidget({ app }: Props) {
   const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
   
   const streamingIdRef = useRef<string | null>(null);
+  // Tracks the current voice turn's message ID per role, so transcript chunks
+  // accumulate into a single bubble rather than spawning new ones.
+  const voiceTurnIdRef = useRef<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Persist messages
@@ -66,8 +69,8 @@ export default function VanthAIChatWidget({ app }: Props) {
   }, [open, messages, isThinking]);
 
   // ── Dispatcher (Tools) ──
-  const allowedRoutes = app === 'cloudcare' ? CLOUDCARE_ALLOWED : ITR_ALLOWED;
-  const { dispatchAction } = useAIDispatcher({ allowedRoutes });
+  const allowedElements = app === 'cloudcare' ? CLOUDCARE_ALLOWED : ITR_ALLOWED;
+  const { dispatch: dispatchAction } = useAIDispatcher({ app, allowedElements });
 
   // ── Text Handler (HTTP/SSE via useChatApi) ──
   const onChatMessage = useCallback((envelope: WSEnvelope) => {
@@ -105,42 +108,73 @@ export default function VanthAIChatWidget({ app }: Props) {
     }
   }, [dispatchAction]);
 
-  const { sendMessage, connectionState: chatState } = useChatApi({
+  const { sendMessage, connectionState: chatState, sessionId } = useChatApi({
     url: WS_ENDPOINTS[app].chat,
     onMessage: onChatMessage,
   });
 
   // ── Voice Handler (Gemini Live) ──
-  const { startSession, stopSession, status: voiceStatus } = useVoiceStreamer({
-    url: WS_ENDPOINTS[app].voice,
-    onTranscript: (text, role) => {
+  const voiceBase = WS_ENDPOINTS[app].voice;
+  const voiceUrl = voiceBase
+    ? `${voiceBase}?page=${encodeURIComponent(location.pathname)}${sessionId ? `&session_id=${sessionId}` : ''}`
+    : voiceBase;
+
+  const { startStreaming, stopStreaming, isStreaming } = useVoiceStreamer({
+    url: voiceUrl,
+    onTranscript: ({ text, role }) => {
       setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.isStreaming && last.role === role) {
-          return [...prev.slice(0, -1), { ...last, content: text }];
+        const existingId = voiceTurnIdRef.current[role];
+        if (existingId) {
+          const found = prev.some(m => m.id === existingId);
+          if (found) {
+            // user: Gemini sends running/cumulative STT → replace each event
+            // model: Gemini sends delta chunks → append each event
+            return prev.map(m => m.id === existingId
+              ? { ...m, content: role === 'user' ? text : m.content + text, isStreaming: true }
+              : m
+            );
+          }
         }
-        return [...prev, { id: Math.random().toString(36).substring(7), role, content: text, isStreaming: true }];
+        // No existing bubble (first chunk or cleared) — create fresh
+        const newId = Math.random().toString(36).substring(7);
+        voiceTurnIdRef.current = { ...voiceTurnIdRef.current, [role]: newId };
+        return [...prev, { id: newId, role, content: text, isStreaming: true }];
       });
     },
-    onFinalTranscript: () => {
+    onAction: (action) => {
+      dispatchAction({ type: 'action', ...action } as any);
+    },
+    onToolCall: (name, _status) => {
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && last.id === streamingIdRef.current) {
+          return [...prev.slice(0, -1), { ...last, toolCalls: [...(last.toolCalls || []), name] }];
+        }
+        const newId = Math.random().toString(36).substring(7);
+        streamingIdRef.current = newId;
+        return [...prev, { id: newId, role: 'assistant', content: '', toolCalls: [name] }];
+      });
+    },
+    onTurnComplete: () => {
+      voiceTurnIdRef.current = {};
       setMessages(prev => prev.map(m => ({ ...m, isStreaming: false })));
     },
-    onToolCall: (name, args) => {
-      if (name === 'navigate_to' && args.path) {
-        dispatchAction({ type: 'action', action: 'navigate', url: args.path } as any);
-      }
-    }
+    onError: (msg) => {
+      console.error('[VoiceStreamer]', msg);
+      setIsVoiceMode(false);
+    },
   });
 
   const handleToggleVoice = useCallback(async () => {
+    voiceTurnIdRef.current = {}; // Always clear turn state on toggle
     if (isVoiceMode) {
-      stopSession();
+      stopStreaming();
       setIsVoiceMode(false);
     } else {
       setIsVoiceMode(true);
-      await startSession();
+      await startStreaming();
     }
-  }, [isVoiceMode, startSession, stopSession]);
+  }, [isVoiceMode, startStreaming, stopStreaming]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -218,6 +252,9 @@ export default function VanthAIChatWidget({ app }: Props) {
               <div className="text-white font-bold text-sm tracking-tight leading-none mb-1">Vanth AI</div>
               <div className={clsx('text-[10px] font-bold uppercase tracking-widest', chatState === 'connected' ? 'text-emerald-300' : 'text-teal-200 animate-pulse')}>
                 {chatState === 'connected' ? 'Live Brain' : 'Syncing...'}
+              </div>
+              <div className="text-[8px] text-white/40 font-mono truncate max-w-[150px]">
+                {WS_ENDPOINTS[app].chat || 'URL MISSING'}
               </div>
             </div>
           </div>
@@ -333,7 +370,7 @@ export default function VanthAIChatWidget({ app }: Props) {
                 ))}
               </div>
               <p className="text-[11px] text-teal-700 font-bold tracking-widest mb-6 uppercase">
-                {voiceStatus === 'streaming' ? 'Vanth AI is listening…' : 'Connecting Voice…'}
+                {isStreaming ? 'Vanth AI is listening…' : 'Connecting Voice…'}
               </p>
               {/* Stop Button */}
               <button
@@ -363,9 +400,9 @@ export default function VanthAIChatWidget({ app }: Props) {
               />
               {/* Mic Button */}
               <button
-                onClick={() => setIsVoiceMode(true)}
+                onClick={handleToggleVoice}
                 className="p-2.5 text-teal-600 bg-teal-50 rounded-xl hover:bg-teal-100 transition-colors shrink-0 mb-0.5"
-                title="Voice input"
+                title="Start voice conversation"
               >
                 <Mic size={18} />
               </button>

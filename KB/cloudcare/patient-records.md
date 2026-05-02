@@ -37,3 +37,4 @@ Each record card displays:
 - When user asks about a specific condition (e.g., "my diabetes records"), filter by relevant record type
 - The agent can use `highlight` action to spotlight the latest record card using `cloudcare-records-latest`
 - Use `navigate+tour` with tour `view-records` to walk the user through interpreting a record
+- **Explanation Capability:** To explain or summarize any records seen on this page, the agent **MUST** call the `query_health_records` tool. Do NOT hallucinate record details; only the tool provides the ground truth from the database.

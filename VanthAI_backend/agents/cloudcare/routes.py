@@ -4,13 +4,14 @@ Chat: HTTP POST with Server-Sent Events (SSE) streaming
 Voice: WebSocket duplex audio with Gemini Live API
 """
 import structlog
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, Query, WebSocket
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.responses import StreamingResponse
 import asyncio
 
 from agents.cloudcare.agent import CloudCareChatHandler
+from agents.cloudcare.prompts import load_page_markdown_from_disk
 from core.config import settings
 from core.gemini_live import GeminiLiveVoiceHandler
 from core.redis_client import create_session
@@ -54,12 +55,23 @@ async def cloudcare_chat_endpoint(payload: ChatPayload):
     return StreamingResponse(handler.stream_generator(), media_type="text/event-stream")
 
 @router.websocket(f"/{settings.ws_cloudcare_voice}")
-async def cloudcare_voice_endpoint(websocket: WebSocket) -> None:
+async def cloudcare_voice_endpoint(
+    websocket: WebSocket,
+    page: str = Query(default="/cloudcare"),
+    session_id: str = Query(default=""),
+) -> None:
     """Duplex voice agent — gemini-3.1-flash-live-preview via Gemini Live API"""
+    page_markdown = load_page_markdown_from_disk(page, kb_base="/app/KB")
+    page_ctx = f"\n\n[CURRENT PAGE]\nThe user is currently on: {page}\nDo NOT offer to navigate there — the user is already there. Focus on helping with what that page provides."
+    kb_ctx = f"\n\n[PAGE KNOWLEDGE]\n{page_markdown}" if page_markdown else ""
+    
+    system_prompt = _CLOUDCARE_SYSTEM_PROMPT + page_ctx + kb_ctx
+    
     handler = GeminiLiveVoiceHandler(
         websocket=websocket,
         app="cloudcare",
-        system_prompt=_CLOUDCARE_SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         available_routes=_CLOUDCARE_ROUTES,
+        provided_session_id=session_id or None,
     )
     await handler.run()

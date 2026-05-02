@@ -14,19 +14,23 @@ interface UseChatApiReturn {
 }
 
 export function useChatApi({ url, onMessage }: UseChatApiOptions): UseChatApiReturn {
-  const [connectionState, setConnectionState] = useState<ConnectionState>('connected');
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const location = useLocation();
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!url) return;
+      if (!url) {
+        console.warn('[useChatApi] No URL provided, skipping sendMessage');
+        return;
+      }
 
       // Convert ws:// to http://
       const httpUrl = url.replace(/^ws(s?):\/\//i, 'http$1://');
+      console.log(`[useChatApi] Sending POST to: ${httpUrl}`, { text, sessionId });
 
       try {
-        setConnectionState('connected');
+        setConnectionState('connecting');
         const response = await fetch(httpUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -39,6 +43,7 @@ export function useChatApi({ url, onMessage }: UseChatApiOptions): UseChatApiRet
 
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         if (!response.body) throw new Error("No response body");
+        setConnectionState('connected');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
@@ -69,6 +74,7 @@ export function useChatApi({ url, onMessage }: UseChatApiOptions): UseChatApiRet
             }
           }
         }
+        setConnectionState('disconnected');
       } catch (err) {
         console.error('SSE Error:', err);
         setConnectionState('error');

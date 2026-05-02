@@ -73,7 +73,9 @@ async def input_node(state: AgentState) -> dict:
 
 async def llm_node(state: AgentState, tools: list[BaseTool]) -> dict:
     """
-    Call LLM with streaming. Sends thinking/token frames over WS.
+    Call LLM with streaming. Silently accumulates JSON output — does NOT stream
+    tokens to the frontend because the LLM outputs raw JSON (per system prompt contract).
+    output_node sends the parsed message field as the visible token instead.
     Appends AIMessage (with possible tool_calls) to state.
     """
     ws: BaseWebSocketHandler = state["ws_handler"]
@@ -84,11 +86,30 @@ async def llm_node(state: AgentState, tools: list[BaseTool]) -> dict:
     full_content = ""
     tool_calls_raw = []
 
+    def _coerce_content(content: Any) -> str:
+        """Safely extract text from a chunk.content that may be str or list-of-parts."""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if isinstance(part, str):
+                    parts.append(part)
+                elif isinstance(part, dict):
+                    parts.append(part.get("text", ""))
+            return "".join(parts)
+        return str(content) if content is not None else ""
+
     try:
         async for chunk in llm.astream(state["messages"]):
             if chunk.content:
-                full_content += chunk.content
-                await ws.send_token(chunk.content)
+                text = _coerce_content(chunk.content)
+                if text:
+                    # Silently accumulate — do NOT send_token here.
+                    # The LLM output is a JSON ActionPayload; streaming raw JSON
+                    # to the frontend would show it verbatim. output_node sends
+                    # only the parsed `message` field as the visible text.
+                    full_content += text
             if hasattr(chunk, "tool_calls") and chunk.tool_calls:
                 tool_calls_raw = chunk.tool_calls
     except Exception as exc:
@@ -142,22 +163,35 @@ async def tool_node(state: AgentState, tools: list[BaseTool]) -> dict:
 
 async def output_node(state: AgentState) -> dict:
     """
-    Parse LLM output as ActionPayload JSON and send action+done frames.
-    If last message is not valid JSON, send it as a plain text action:none.
+    Parse LLM output as ActionPayload JSON and send token + action + done frames.
+    - Happy path: parsed JSON → send message field as token, then send action envelope
+    - Fallback: non-JSON plain text → send as-is as token with action:none
     """
     ws: BaseWebSocketHandler = state["ws_handler"]
     last = state["messages"][-1]
-    raw = last.content if isinstance(last, (AIMessage, HumanMessage)) else ""
+    raw_content = last.content if isinstance(last, (AIMessage, HumanMessage)) else ""
+    # Gemini/Gemma can return content as a list of parts — flatten to str
+    if isinstance(raw_content, list):
+        raw = "".join(
+            p if isinstance(p, str) else p.get("text", "") if isinstance(p, dict) else ""
+            for p in raw_content
+        )
+    else:
+        raw = raw_content or ""
 
     payload = parse_ai_response(raw)
     if payload:
+        # Send only the human-readable message as the visible chat token
+        if payload.message:
+            await ws.send_token(payload.message)
         await ws.send_action(payload.model_dump(exclude_none=True))
     else:
-        # Fallback: send raw text as action:none
-        # Strip code fences if LLM misbehaved
+        # Fallback: LLM returned plain text — show it directly
         clean = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+        visible = clean or "I'm not sure how to help with that."
+        await ws.send_token(visible)
         await ws.send_action({
-            "message": clean or "I'm not sure how to help with that.",
+            "message": visible,
             "message_type": "text",
             "action": "none",
         })

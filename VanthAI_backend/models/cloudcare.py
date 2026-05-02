@@ -4,7 +4,7 @@ Read-only usage in agent tools only.
 """
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text, Time, Timestamp
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.db import Base
@@ -47,7 +47,7 @@ class HealthRecord(Base):
     treatment:   Mapped[str | None] = mapped_column(Text)
     doctor_id:   Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
     hospital:    Mapped[str | None] = mapped_column(String(255))
-    record_date: Mapped[datetime]  = mapped_column(Timestamp)
+    record_date: Mapped[datetime]  = mapped_column(DateTime)
 
 
 class Appointment(Base):
@@ -87,4 +87,4 @@ class Vitals(Base):
     bp_diastolic: Mapped[int | None]  = mapped_column(Integer)
     temperature:  Mapped[float | None] = mapped_column(Numeric(4, 1))
     steps_today:  Mapped[int | None]  = mapped_column(Integer)
-    recorded_at:  Mapped[datetime]    = mapped_column(Timestamp)
+    recorded_at:  Mapped[datetime]    = mapped_column(DateTime)
