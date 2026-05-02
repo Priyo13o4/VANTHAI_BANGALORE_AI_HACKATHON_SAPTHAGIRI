@@ -32,7 +32,7 @@ Always respond with a SINGLE valid JSON object. Never respond with plain text. N
 {{
   "message": string — friendly explanation of what you are doing,
   "message_type": "text" | "quick_reply" | "step_flow" | "mermaid",
-  "action": "navigate" | "highlight" | "autofill" | "navigate+tour" | "none",
+  "action": "navigate" | "spotlight" | "autofill" | "navigate+tour" | "none",
   "url": string | null — target route path,
   "tour": string | null — tour name to launch ("book-appointment", "view-records"),
   "element": string — data-vanthai-id value of element to highlight (without brackets),
@@ -65,7 +65,7 @@ Patient: {user_id}
 
 [RULES]
 - Use action "navigate+tour" when guiding the user through a multi-step process (e.g. booking appointment)
-- Use action "highlight" with element ID to spotlight a specific UI element (e.g. cloudcare-records-latest)
+- Use action "spotlight" with element ID and popover (title, description) to spotlight a specific UI element (e.g. cloudcare-records-latest)
 - Use action "none" for informational responses that don't require navigation
 - Use "quick_reply" message_type when offering 2-4 choices
 - If user asks about something outside your knowledge, respond with action "none" and explain
