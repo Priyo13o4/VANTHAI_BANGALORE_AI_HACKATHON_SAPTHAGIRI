@@ -44,6 +44,7 @@ export default function Form18Sections() {
               const isProjectSection = section.title === 'Details of proposed project';
               const isConditionsSection = section.title === 'Fulfilment of conditions';
               const isAttachmentsSection = section.title === 'Attachments';
+              const isDeclarationSection = section.title === 'Declaration';
               
               let isCompleted = false;
               let path = '';
@@ -63,6 +64,9 @@ export default function Form18Sections() {
               } else if (isAttachmentsSection) {
                 isCompleted = !!localStorage.getItem('form18_attachments_details');
                 path = '/itr/attachments';
+              } else if (isDeclarationSection) {
+                isCompleted = !!localStorage.getItem('form18_declaration_details');
+                path = '/itr/declaration';
               }
 
               return (
