@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Driver.js page blur overlay ────────────────────────────────────────── */
+.vanthai-blur-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  backdrop-filter: blur(0px);
+  background: transparent;
+  transition: backdrop-filter 0.3s ease, background 0.3s ease;
+}
+
+.vanthai-blur-overlay.vanthai-blur-active {
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+/* ── Shepherd.js theme overrides (to match VanthAI brand) ───────────────── */
+.shepherd-element {
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.shepherd-text { font-size: 0.875rem; line-height: 1.6; }
+.shepherd-title { font-size: 1rem; font-weight: 600; }
+
+.shepherd-button {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+}
+
+.shepherd-button-primary {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.shepherd-button-secondary {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+/* ── Autofill highlight (formHelpers.ts) ─────────────────────────────────── */
+.bg-green-50 { background-color: #f0fdf4; }
+.border-green-500 { border-color: #22c55e; }
