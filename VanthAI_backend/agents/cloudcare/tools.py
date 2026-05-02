@@ -190,6 +190,40 @@ async def query_health_records(patient_id: int) -> str:
             return json.dumps({"error": f"Database query failed: {exc}"})
 
 
+@tool
+async def query_doctors(specialization: str | None = None) -> str:
+    """
+    Query the list of available doctors. Can be filtered by specialization (e.g. 'Cardiology').
+    Returns doctor name, specializations, and contact info.
+    """
+    from sqlalchemy import select
+    from models.cloudcare import Doctor
+
+    async with AsyncSessionLocal() as session:
+        try:
+            stmt = select(Doctor)
+            if specialization:
+                stmt = stmt.where(Doctor.specializations.ilike(f"%{specialization}%"))
+            
+            result = await session.execute(stmt)
+            doctors = result.scalars().all()
+
+            results = []
+            for d in doctors:
+                results.append({
+                    "id": d.id,
+                    "name": d.name,
+                    "specializations": d.specializations,
+                    "contact": d.contact
+                })
+
+            logger.info("tool.query_doctors", count=len(results), specialization=specialization)
+            return json.dumps(results)
+        except Exception as exc:
+            logger.error("tool.query_doctors.error", error=str(exc))
+            return json.dumps({"error": str(exc)})
+
+
 # All tools exported as a list for LangGraph bind_tools()
 CLOUDCARE_TOOLS = [
     load_page_markdown,
@@ -198,4 +232,5 @@ CLOUDCARE_TOOLS = [
     query_active_prescriptions,
     query_latest_vitals,
     query_health_records,
+    query_doctors,
 ]

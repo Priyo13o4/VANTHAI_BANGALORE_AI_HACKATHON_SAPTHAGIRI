@@ -4,10 +4,10 @@
 
 -- ── Doctors ──────────────────────────────────────────────────────────────────
 INSERT INTO doctors (id, name, age, gender, contact, specializations) VALUES
-  (1, 'Dr. Sarah Johnson', 45, 'Female', '+91-9876543210', 'Cardiology, Internal Medicine'),
-  (2, 'Dr. Amit Patel',    38, 'Male',   '+91-9876543211', 'General Medicine'),
-  (3, 'Dr. Priya Sharma',  42, 'Female', '+91-9876543212', 'Orthopedics'),
-  (4, 'Dr. Rajesh Kumar',  50, 'Male',   '+91-9876543213', 'Neurology')
+  (1, 'Dr. Sarah Johnson', 42, 'Female', '+91 98765 43210', 'Cardiology, Hypertension Specialist'),
+  (2, 'Dr. Amit Patel',    38, 'Male',   '+91 87654 32109', 'Endocrinology, Diabetes Management'),
+  (3, 'Dr. Priya Sharma',  35, 'Female', '+91 76543 21098', 'Emergency Medicine, Internal Medicine'),
+  (4, 'Dr. Rajesh Gupta',  50, 'Male',   '+91 65432 10987', 'General Physician, Wellness')
 ON CONFLICT (id) DO NOTHING;
 
 -- Reset sequence

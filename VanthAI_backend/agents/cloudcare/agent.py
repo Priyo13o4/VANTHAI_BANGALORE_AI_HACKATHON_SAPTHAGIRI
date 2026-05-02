@@ -37,7 +37,7 @@ class CloudCareChatHandler(HTTPChatHandler):
         await update_session_page(self.session_id, current_page)
 
         page_markdown = load_page_markdown_from_disk(current_page, kb_base="/app/KB")
-        user_id = session.get("user_id", "35")  # default to demo patient 35
+        user_id = session.get("user_id", "1")  # default to demo patient 1 (Rajesh)
         system_prompt = build_system_prompt(current_page, user_id, page_markdown)
 
         await run_agent(
