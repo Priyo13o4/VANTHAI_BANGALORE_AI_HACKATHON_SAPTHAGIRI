@@ -9,9 +9,29 @@ const navItems = [
     label: 'e-File', 
     path: '/itr/personal', 
     dropdownItems: [
-      { label: 'Income Tax Returns', path: '/itr/personal' },
-      { label: 'Rectification', path: '/itr/personal' },
-      { label: 'Response to Outstanding Demand', path: '/itr/personal' }
+      { 
+        label: 'Income Tax Returns', 
+        path: '/itr/personal',
+        subItems: [
+          { label: 'File Income Tax Return', path: '/itr/personal' },
+          { label: 'View Filed Returns', path: '/itr/personal' },
+          { label: 'e-Verify Return', path: '/itr/personal' },
+          { label: 'View Form 26AS', path: '/itr/personal' },
+          { label: 'Download Pre-Filled Data', path: '/itr/personal' },
+          { label: 'View Annual Information Statement (AIS)', path: '/itr/personal' }
+        ]
+      },
+      { 
+        label: 'Income Tax Forms', 
+        path: '/itr/personal',
+        subItems: [
+          { label: 'File Income Tax Forms', path: '/itr/personal' },
+          { label: 'View Filed Forms', path: '/itr/personal' },
+          { label: 'View Bulk Filed Forms Status (15CA/145)', path: '/itr/personal' }
+        ]
+      },
+      { label: 'e-Pay Tax', path: '/itr/personal' },
+      { label: 'Submit Tax Evasion Petition or Benami Property holding', path: '/itr/personal' }
     ]
   },
   { 
@@ -165,15 +185,31 @@ export default function ITRLayout() {
                     </Link>
                     
                     {item.dropdownItems && (
-                      <div className="absolute top-full left-0 hidden group-hover:block bg-white text-[#1f2937] shadow-xl border border-[#e5e7eb] py-2 min-w-[220px] z-[60] rounded-b-md animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="absolute top-full left-0 hidden group-hover:block bg-white text-[#1f2937] shadow-xl border border-[#e5e7eb] py-2 min-w-[240px] z-[60] rounded-b-md animate-in fade-in slide-in-from-top-2 duration-200">
                         {item.dropdownItems.map((subItem, idx) => (
-                          <Link 
-                            key={idx}
-                            to={subItem.path}
-                            className="block px-4 py-2.5 hover:bg-[#eff6ff] hover:text-[#1d4ed8] text-[13px] font-medium border-b border-gray-50 last:border-0 transition-colors"
-                          >
-                            {subItem.label}
-                          </Link>
+                          <div key={idx} className="relative group/sub">
+                            <Link 
+                              to={subItem.path}
+                              className="flex items-center justify-between px-4 py-2.5 hover:bg-[#eff6ff] hover:text-[#1d4ed8] text-[13px] font-medium border-b border-gray-50 last:border-0 transition-colors"
+                            >
+                              <span>{subItem.label}</span>
+                              {subItem.subItems && <span className="text-[10px] opacity-40">›</span>}
+                            </Link>
+                            
+                            {subItem.subItems && (
+                              <div className="absolute top-0 left-full hidden group-hover/sub:block bg-white text-[#1f2937] shadow-xl border border-[#e5e7eb] py-2 min-w-[260px] z-[70] rounded-md -ml-px animate-in fade-in slide-in-from-left-2 duration-200">
+                                {subItem.subItems.map((thirdLevelItem, idx2) => (
+                                  <Link 
+                                    key={idx2}
+                                    to={thirdLevelItem.path}
+                                    className="block px-4 py-2.5 hover:bg-[#eff6ff] hover:text-[#1d4ed8] text-[13px] font-medium border-b border-gray-50 last:border-0 transition-colors"
+                                  >
+                                    {thirdLevelItem.label}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
