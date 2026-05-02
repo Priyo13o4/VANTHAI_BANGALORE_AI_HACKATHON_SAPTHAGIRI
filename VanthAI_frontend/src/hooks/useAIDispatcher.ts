@@ -7,13 +7,16 @@
  *
  * sendToN8n() is DELETED. The only outbound communication is useWebSocket.sendMessage().
  * No reference to VITE_N8N_CHAT_URL anywhere.
+ *
+ * ── Migration: Shepherd.js + Driver.js → VanthAI Spotlight Engine ──
+ * highlight action now uses useSpotlight instead of Driver.js
+ * navigate+tour uses useSpotlight instead of Shepherd.js
  */
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ActionEnvelope } from '../types/ws';
 import { autoFillForm, highlightFilledFields } from '../utils/formHelpers';
-import { applyPageBlur, clearPageBlur } from '../utils/blur';
-import { useTour } from './useTour';
+import { useSpotlight } from './useSpotlight';
 
 interface UseAIDispatcherOptions {
   app: 'cloudcare' | 'itr';
@@ -29,7 +32,7 @@ export function useAIDispatcher({
   allowedElements,
 }: UseAIDispatcherOptions): UseAIDispatcherReturn {
   const navigate = useNavigate();
-  const { startTour } = useTour(app);
+  const { startTour, highlight, clearHighlight } = useSpotlight(app);
 
   const dispatch = useCallback(
     (parsed: ActionEnvelope) => {
@@ -53,35 +56,21 @@ export function useAIDispatcher({
 
       // ── New blocks (added after ERP-SIH blocks, do NOT touch above) ──────────
 
-      // action: highlight (Driver.js blur + spotlight)
+      // action: highlight (VanthAI Spotlight — replaces Driver.js)
       else if (parsed.action === 'highlight' && parsed.element) {
-        // data-vanthai-id convention: only registered elements can be highlighted
         const selector = parsed.element;
-        const normalizedId = selector.replace(/\[data-vanthai-id=['"]?([^'"\\]]+)['"]?\]/i, '$1');
+        const normalizedId = selector.replace(/\[data-vanthai-id=['"]?([^'"\\]+)['"]?\]/i, '$1');
         if (allowedElements.has(normalizedId) || allowedElements.has(selector)) {
-          applyPageBlur();
-          // Lazy-import driver.js to avoid loading it at startup
-          import('driver.js').then(({ driver }) => {
-            const driverObj = driver({
-              animate: true,
-              overlayOpacity: 0.75,
-              onDestroyStarted: () => {
-                clearPageBlur();
-                driverObj.destroy();
-              },
-            });
-            driverObj.highlight({
-              element: selector,
-              popover: parsed.popover
-                ? { title: parsed.popover.title, description: parsed.popover.description }
-                : undefined,
-            });
-          });
+          highlight(
+            selector,
+            parsed.popover?.title,
+            parsed.popover?.description,
+          );
         }
         return;
       }
 
-      // action: navigate+tour (navigate then launch Shepherd tour after 650ms)
+      // action: navigate+tour (navigate then launch Spotlight tour after 650ms)
       else if (parsed.action === 'navigate+tour' && parsed.url) {
         navigate(parsed.url);
         if (parsed.tour) {
@@ -97,9 +86,15 @@ export function useAIDispatcher({
         return;
       }
 
+      // action: clearHighlight — dismiss any active spotlight
+      else if (parsed.action === 'clearHighlight') {
+        clearHighlight();
+        return;
+      }
+
       // action: none — no-op (message-only response)
     },
-    [navigate, startTour, allowedElements]
+    [navigate, startTour, highlight, clearHighlight, allowedElements]
   );
 
   return { dispatch };

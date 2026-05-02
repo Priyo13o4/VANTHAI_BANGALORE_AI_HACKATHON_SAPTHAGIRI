@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
+import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
 
 const navItems = [
   { label: 'Dashboard', path: '/itr' },
@@ -248,6 +249,8 @@ export default function ITRLayout() {
           <div className="sm:text-right text-[#6b7280]">Last reviewed and updated on : 2-May-2026</div>
         </div>
       </footer>
+
+      <SpotlightOverlay />
 
       {showChatWidget && <VanthAIChatWidget app="itr" />}
     </div>

@@ -29,6 +29,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
+import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
+import { useSpotlight } from '../../../hooks/useSpotlight';
 
 const drawerWidth = 280;
 
@@ -70,12 +72,16 @@ export default function MuiDashboardLayout() {
   const menuItems = role === 'doctor' ? doctorMenuItems : role === 'hospital' ? hospitalMenuItems : patientMenuItems;
   const layoutTitle = role === 'doctor' ? 'Doctor Portal' : role === 'hospital' ? 'Hospital Admin' : 'Patient Dashboard';
 
+  const { startTour } = useSpotlight('cloudcare');
+
   useEffect(() => {
     const storedEmail = window.localStorage.getItem('userEmail');
     if (storedEmail && storedEmail[0]) {
       setUserInitial(storedEmail[0].toUpperCase());
     }
   }, []);
+
+
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -302,12 +308,12 @@ export default function MuiDashboardLayout() {
           mt: ['64px', '64px', '64px'],
         }}
       >
-        {/* Page blur overlay (used by Driver.js) */}
-        <div id="page-blur-overlay" className="vanthai-blur-overlay" />
-        
         <Outlet />
       </Box>
       
+      {/* VanthAI Spotlight Guidance Overlay */}
+      <SpotlightOverlay />
+
       {/* Chat Widget specifically for CloudCare */}
       <VanthAIChatWidget app="cloudcare" />
     </Box>
