@@ -54,6 +54,7 @@ import BusinessDetails from './apps/itr/pages/BusinessDetails';
 import ProjectDetails from './apps/itr/pages/ProjectDetails';
 import ConditionsFulfillment from './apps/itr/pages/ConditionsFulfillment';
 import FormAttachments from './apps/itr/pages/FormAttachments';
+import FormDeclaration from './apps/itr/pages/FormDeclaration';
 
 const router = createBrowserRouter([
   // Redirect root to cloudcare login
@@ -106,6 +107,7 @@ const router = createBrowserRouter([
       { path: 'project-details', element: <ProjectDetails /> },
       { path: 'conditions-fulfillment', element: <ConditionsFulfillment /> },
       { path: 'attachments', element: <FormAttachments /> },
+      { path: 'declaration', element: <FormDeclaration /> },
       { path: 'salary', element: <SalaryIncome /> },
       { path: 'deductions', element: <Deductions /> },
       { path: 'tax-paid', element: <TaxPaid /> },
