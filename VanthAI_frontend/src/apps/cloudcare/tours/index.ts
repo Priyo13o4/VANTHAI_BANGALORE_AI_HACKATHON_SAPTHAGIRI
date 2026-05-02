@@ -1,6 +1,6 @@
 // src/apps/cloudcare/tours/index.ts
-import type { TourStepConfig } from '../../../hooks/useTour';
-import { registerTours } from '../../../hooks/useTour';
+import type { SpotlightStep } from '../../../components/guidance/spotlightStore';
+import { registerSpotlightTours } from '../../../hooks/useSpotlight';
 
 // All data-vanthai-id values that the agent is allowed to spotlight.
 // Elements NOT in this set are silently ignored by useAIDispatcher.
@@ -35,62 +35,48 @@ export const CLOUDCARE_ALLOWED = new Set<string>([
 ]);
 
 // ── Book Appointment tour ─────────────────────────────────────────────────────
-const bookAppointmentTour: TourStepConfig[] = [
+const bookAppointmentTour: SpotlightStep[] = [
   {
     id: 'appt-step-1',
-    attachTo: { element: '[data-vanthai-id="cloudcare-appointment-date"]', on: 'bottom' },
+    target: '[data-vanthai-id="cloudcare-appointment-date"]',
     title: 'Step 1 of 3 — Pick a date',
     text: 'Tap the calendar icon to choose your appointment date. Choose a future date.',
-    buttons: [{ text: 'Next →', action: 'next' }],
   },
   {
     id: 'appt-step-2',
-    attachTo: { element: '[data-vanthai-id="cloudcare-appointment-doctor"]', on: 'bottom' },
+    target: '[data-vanthai-id="cloudcare-appointment-doctor"]',
     title: 'Step 2 of 3 — Select your doctor',
     text: 'Choose from your care team. Dr. Sarah Johnson handles Cardiology.',
-    buttons: [
-      { text: '← Back', action: 'back', classes: 'shepherd-button-secondary' },
-      { text: 'Next →', action: 'next' },
-    ],
   },
   {
     id: 'appt-step-3',
-    attachTo: { element: '[data-vanthai-id="cloudcare-appointments-confirm-btn"]', on: 'top' },
+    target: '[data-vanthai-id="cloudcare-appointments-confirm-btn"]',
     title: 'Step 3 of 3 — Confirm',
     text: 'Review your selection and click Confirm to book your appointment.',
-    buttons: [
-      { text: '← Back', action: 'back', classes: 'shepherd-button-secondary' },
-      { text: 'Done ✓', action: 'complete' },
-    ],
   },
 ];
 
 // ── View Records tour ─────────────────────────────────────────────────────────
-const viewRecordsTour: TourStepConfig[] = [
+const viewRecordsTour: SpotlightStep[] = [
   {
     id: 'records-step-1',
-    attachTo: { element: '[data-vanthai-id="cloudcare-records-latest"]', on: 'bottom' },
+    target: '[data-vanthai-id="cloudcare-records-latest"]',
     title: 'Your Latest Visit',
     text: 'This card shows your most recent medical encounter — including diagnosis and treatment.',
-    buttons: [{ text: 'Next →', action: 'next' }],
   },
   {
     id: 'records-step-2',
-    attachTo: { element: '[data-vanthai-id="cloudcare-records-filter-type"]', on: 'bottom' },
+    target: '[data-vanthai-id="cloudcare-records-filter-type"]',
     title: 'Filter by Type',
     text: 'Use this dropdown to filter by Consultation, Lab Test, or Emergency visits.',
-    buttons: [
-      { text: '← Back', action: 'back', classes: 'shepherd-button-secondary' },
-      { text: 'Done ✓', action: 'complete' },
-    ],
   },
 ];
 
-const CLOUDCARE_TOURS: Record<string, TourStepConfig[]> = {
+const CLOUDCARE_TOURS: Record<string, SpotlightStep[]> = {
   'book-appointment': bookAppointmentTour,
   'view-records': viewRecordsTour,
 };
 
-registerTours(CLOUDCARE_TOURS);
+registerSpotlightTours(CLOUDCARE_TOURS);
 
 export default CLOUDCARE_TOURS;
