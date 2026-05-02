@@ -44,6 +44,8 @@ import PersonalInfo from './apps/itr/pages/PersonalInfo';
 import SalaryIncome from './apps/itr/pages/SalaryIncome';
 import Deductions from './apps/itr/pages/Deductions';
 import TaxPaid from './apps/itr/pages/TaxPaid';
+import FileITR from './apps/itr/pages/FileITR';
+import UploadITR from './apps/itr/pages/UploadITR';
 
 const router = createBrowserRouter([
   // Redirect root to cloudcare login
@@ -86,6 +88,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <ITROverview /> },
       { path: 'personal', element: <PersonalInfo /> },
+      { path: 'file-return', element: <FileITR /> },
+      { path: 'upload-itr', element: <UploadITR /> },
       { path: 'salary', element: <SalaryIncome /> },
       { path: 'deductions', element: <Deductions /> },
       { path: 'tax-paid', element: <TaxPaid /> },
