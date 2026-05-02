@@ -2,149 +2,85 @@ import { Link } from 'react-router-dom';
 
 export default function ITROverview() {
   return (
-    <div className="space-y-6" data-vanthai-id="itr-overview-root">
-      
-      {/* Welcome Banner */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
-        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-blue-50 to-transparent pointer-events-none" />
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1a365d] mb-2">Welcome, TAXPAYER</h1>
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600">
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-gray-700">PAN:</span> XXXXX1234X
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-gray-700">Aadhaar:</span> 
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Linked
-                  </span>
-                </div>
+    <div className="space-y-4" data-vanthai-id="itr-overview-root">
+      <div className="text-[12px] text-[#64748b] pl-1">Dashboard</div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-5 items-start">
+        <div className="space-y-5">
+          <section className="bg-white border border-[#e5e7eb] shadow-sm p-5 min-h-[255px]">
+            <h1 className="text-[19px] font-semibold text-[#1f2937] mb-4">Welcome Back, Taxpayer</h1>
+            <div className="space-y-2 text-[12px] text-[#111827] leading-5">
+              <div className="font-semibold">HVGPM1142B</div>
+              <div>XXXXXXXXX6964</div>
+              <div>+91 9592550219</div>
+              <div>taxpayer1304@gmail.com</div>
+            </div>
+
+            <div className="mt-4 space-y-2 text-[12px] text-[#111827]">
+              <div className="flex items-center justify-between gap-3">
+                <span>Contact Details</span>
+                <a href="#" className="text-[#1d4ed8] font-medium">Update</a>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Bank Account</span>
+                <a href="#" className="text-[#1d4ed8] font-medium">Update</a>
               </div>
             </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <Link
-                to="/itr/personal"
-                className="flex-1 sm:flex-none text-center px-6 py-2.5 bg-[#1a365d] text-white rounded-lg font-medium hover:bg-[#122544] transition-colors shadow-sm"
-              >
-                File Now
-              </Link>
+
+            <div className="mt-4 flex items-start justify-between gap-4 text-[12px]">
+              <div className="max-w-[180px] text-[#374151] leading-4">Your account is not secure with e-vault</div>
+              <a href="#" className="text-[#1d4ed8] font-medium whitespace-nowrap">Secure Account</a>
             </div>
-          </div>
-        </div>
-      </div>
+          </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Left Column (Main Content) */}
-        <div className="md:col-span-2 space-y-6">
-          
-          {/* Quick Actions Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { title: 'e-File', icon: '📄', color: 'bg-blue-50 text-blue-600', path: '/itr/personal' },
-              { title: 'View Returns', icon: '🔍', color: 'bg-indigo-50 text-indigo-600', path: '/itr' },
-              { title: 'e-Pay Tax', icon: '💳', color: 'bg-green-50 text-green-600', path: '/itr/tax-paid' },
-              { title: 'Services', icon: '⚙️', color: 'bg-orange-50 text-orange-600', path: '/itr' },
-            ].map((action, i) => (
-              <Link
-                key={i}
-                to={action.path}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col items-center justify-center gap-3 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center text-xl group-hover:scale-110 transition-transform`}>
-                  {action.icon}
-                </div>
-                <span className="text-sm font-medium text-gray-700 text-center">{action.title}</span>
-              </Link>
-            ))}
-          </div>
+          <section className="bg-white border border-[#e5e7eb] shadow-sm px-4 py-3 flex items-center justify-between min-h-[46px]">
+            <span className="text-[13px] font-medium text-[#1f2937]">Income &amp; Tax Estimator</span>
+            <span className="text-[#94a3b8]">▦</span>
+          </section>
 
-          {/* Filing Status Timeline */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-[#1a365d] mb-6 flex items-center gap-2">
-              <span className="text-[#e67e22]">📅</span> Assessment Year 2024-25
-            </h2>
-            
-            <div className="relative">
-              {/* Timeline Line */}
-              <div className="absolute left-[21px] top-4 bottom-4 w-0.5 bg-gray-200" />
-              
-              <div className="space-y-8 relative">
-                <div className="flex gap-4">
-                  <div className="w-11 h-11 rounded-full bg-green-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 z-10 text-green-600">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                  </div>
-                  <div className="pt-2">
-                    <div className="font-semibold text-gray-900">Return Filed</div>
-                    <div className="text-sm text-gray-500">Successfully filed on 15 Jul 2024</div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="w-11 h-11 rounded-full bg-green-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 z-10 text-green-600">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                  </div>
-                  <div className="pt-2">
-                    <div className="font-semibold text-gray-900">Return Verified</div>
-                    <div className="text-sm text-gray-500">e-Verified successfully on 15 Jul 2024</div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="w-11 h-11 rounded-full bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 z-10 text-blue-600 animate-pulse">
-                    <div className="w-3 h-3 bg-blue-600 rounded-full" />
-                  </div>
-                  <div className="pt-2">
-                    <div className="font-semibold text-[#1a365d]">Processing</div>
-                    <div className="text-sm text-gray-500">Your return is under processing</div>
-                    <button className="mt-2 text-xs font-medium text-blue-600 hover:underline">View Details</button>
-                  </div>
-                </div>
+          <section className="bg-white border border-[#e5e7eb] shadow-sm px-4 py-3 flex items-center justify-between min-h-[46px]">
+            <span className="text-[13px] font-medium text-[#1f2937]">Tax Calendar</span>
+            <span className="text-[#94a3b8]">▦</span>
+          </section>
+
+          <section className="bg-white border border-[#e5e7eb] shadow-sm px-4 py-3 min-h-[106px]">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[13px] font-medium text-[#1f2937]">Activity Log</span>
+              <a href="#" className="text-[12px] text-[#1d4ed8] font-medium">View All</a>
+            </div>
+            <div className="space-y-3 text-[12px] text-[#111827]">
+              <div className="flex justify-between gap-4">
+                <span>Last log in</span>
+                <span className="text-[#374151]">02-May-2026, 03:02 PM</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span>Last log out</span>
+                <span className="text-[#374151]">19-Jul-2025, 06:00 PM</span>
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* Right Column (Side Widgets) */}
-        <div className="space-y-6">
-          {/* Pending Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-base font-bold text-[#1a365d] mb-4 flex items-center justify-between">
-              Pending Actions
-              <span className="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-md font-medium">1 Item</span>
-            </h2>
-            <div className="p-3 bg-orange-50 border border-orange-100 rounded-lg">
-              <div className="text-sm font-semibold text-orange-800 mb-1">Advance Tax Due</div>
-              <div className="text-xs text-orange-700 mb-3">Please pay your 2nd installment of Advance Tax before 15 Sep.</div>
-              <button className="text-xs font-medium bg-orange-100 text-orange-800 px-3 py-1.5 rounded hover:bg-orange-200 transition-colors w-full">
-                Pay Now
-              </button>
-            </div>
-          </div>
+        <div className="space-y-5">
+          <section className="bg-white border border-[#e5e7eb] shadow-sm p-5 min-h-[124px]">
+            <div className="text-[18px] leading-7 font-medium text-[#1f2937] max-w-[460px]">File your return for the year ended on 31-Mar-2026</div>
+            <div className="mt-3 text-[13px] text-[#374151]">For Assessment Year 2026-27</div>
+            <div className="mt-4 text-[13px] text-[#374151]">e-Filing for the same will be enabled soon!</div>
+          </section>
 
-          {/* Recent Updates */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-base font-bold text-[#1a365d] mb-4">Recent Updates</h2>
-            <div className="space-y-4">
-              {[
-                { date: '10 Aug 2024', text: 'Important: CBDT extends due date for filing Form 10B/10BB.' },
-                { date: '01 Aug 2024', text: 'New e-Pay Tax functionality is now live for all users.' },
-                { date: '15 Jul 2024', text: 'AIS (Annual Information Statement) has been updated for AY 2024-25.' },
-              ].map((update, i) => (
-                <div key={i} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                  <div className="text-xs text-gray-400 mb-1">{update.date}</div>
-                  <div className="text-sm text-gray-700 leading-snug">{update.text}</div>
-                </div>
-              ))}
-            </div>
-            <button className="text-sm text-blue-600 hover:text-blue-800 font-medium mt-4 w-full text-center">
-              View All Updates
-            </button>
-          </div>
+          {[
+            'Tax Deposit',
+            'Recent Filed Returns',
+            'Recent Forms Filed',
+          ].map((title) => (
+            <section key={title} className="bg-white border border-[#e5e7eb] shadow-sm px-5 py-4 min-h-[60px] flex items-center">
+              <div className="flex items-center gap-3 text-[14px] font-semibold text-[#1f2937]">
+                <span className="text-[#64748b] text-[16px]">›</span>
+                {title}
+              </div>
+            </section>
+          ))}
         </div>
-        
       </div>
     </div>
   );
