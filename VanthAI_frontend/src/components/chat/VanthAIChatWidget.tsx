@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { useWebSocket } from '../../hooks/useWebSocket';
+import { useChatApi } from '../../hooks/useChatApi';
 import { useAIDispatcher } from '../../hooks/useAIDispatcher';
 import { CLOUDCARE_ALLOWED } from '../../apps/cloudcare/tours/index';
 import { ITR_ALLOWED } from '../../apps/itr/tours/index';
@@ -155,7 +155,7 @@ export default function VanthAIChatWidget({ app }: Props) {
     [dispatch]
   );
 
-  const { sendMessage, connectionState } = useWebSocket({ url: wsUrl, onMessage: handleEnvelope });
+  const { sendMessage, connectionState } = useChatApi({ url: wsUrl, onMessage: handleEnvelope });
 
   const handleSend = () => {
     const text = input.trim();
