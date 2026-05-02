@@ -25,7 +25,7 @@ const navItems = [
         label: 'Income Tax Forms', 
         path: '/itr/personal',
         subItems: [
-          { label: 'File Income Tax Forms', path: '/itr/personal' },
+          { label: 'File Income Tax Forms', path: '/itr/file-forms' },
           { label: 'View Filed Forms', path: '/itr/personal' },
           { label: 'View Bulk Filed Forms Status (15CA/145)', path: '/itr/personal' }
         ]
