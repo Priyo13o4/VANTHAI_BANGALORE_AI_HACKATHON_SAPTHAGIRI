@@ -5,21 +5,61 @@ import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
 
 const navItems = [
   { label: 'Dashboard', path: '/itr' },
-  { label: 'e-File', path: '/itr/personal' },
-  { label: 'Services', path: '/itr/salary' },
-  { label: 'Pending Actions', path: '/itr/deductions' },
+  { 
+    label: 'e-File', 
+    path: '/itr/personal', 
+    dropdownItems: [
+      { label: 'Income Tax Returns', path: '/itr/personal' },
+      { label: 'Rectification', path: '/itr/personal' },
+      { label: 'Response to Outstanding Demand', path: '/itr/personal' }
+    ]
+  },
+  { 
+    label: 'Authorised Partners', 
+    path: '/itr/salary',
+    dropdownItems: [
+      { label: 'My CA', path: '/itr/salary' },
+      { label: 'Authorise My CA', path: '/itr/salary' }
+    ]
+  },
+  { 
+    label: 'Services', 
+    path: '/itr/deductions',
+    dropdownItems: [
+      { label: 'e-Verify Return', path: '/itr/deductions' },
+      { label: 'Know Your TAN', path: '/itr/deductions' },
+      { label: 'Know Your AO', path: '/itr/deductions' }
+    ]
+  },
+  { label: 'AIS', path: '/itr/tax-paid' },
+  { 
+    label: 'Pending Actions', 
+    path: '/itr/deductions',
+    dropdownItems: [
+      { label: 'Worklist', path: '/itr/deductions' },
+      { label: 'Response to Outstanding Demand', path: '/itr/deductions' }
+    ]
+  },
+  { 
+    label: 'Grievances', 
+    path: '/itr/tax-paid',
+    dropdownItems: [
+      { label: 'Submit Grievance', path: '/itr/tax-paid' },
+      { label: 'Grievance Status', path: '/itr/tax-paid' }
+    ]
+  },
   { label: 'Help', path: '/itr/tax-paid' },
 ];
 
 export default function ITRLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [initial, setInitial] = useState('P');
+  const [initial, setInitial] = useState('T');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const email = localStorage.getItem('userEmail');
-    if (email?.[0]) setInitial(email[0].toUpperCase());
+    if (email?.[0]) setInitial('T');
   }, []);
 
   const handleLogout = () => {
@@ -27,161 +67,153 @@ export default function ITRLayout() {
     navigate('/');
   };
 
+  const showChatWidget = location.pathname !== '/itr';
+
   return (
-    <div className="min-h-screen bg-[#f3f4f6] font-sans flex flex-col">
-      {/* ── Top Bar (Gov Branding Style) ─────────────────────────────────── */}
-      <div className="bg-[#1a365d] text-white px-4 py-1.5 text-xs flex justify-between items-center hidden sm:flex">
-        <div className="flex gap-4">
-          <span>Government of Bharat</span>
-          <span>Department of Revenue</span>
-        </div>
-        <div className="flex gap-4 items-center">
-          <span>A-</span>
-          <span>A</span>
-          <span>A+</span>
-          <span>Language: English</span>
-        </div>
-      </div>
-
-      {/* ── Main Header ─────────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/itr')}>
-              <div className="w-10 h-10 bg-[#e6f0fa] rounded-full flex items-center justify-center text-xl shadow-inner border border-[#cce0f5]">
-                🏛️
-              </div>
-              <div className="hidden sm:block">
-                <div className="text-[#1a365d] font-bold text-xl leading-none">Tax e-Portal</div>
-                <div className="text-[#e67e22] text-xs font-semibold tracking-wide">Filing Anywhere Anytime</div>
-              </div>
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-1">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={clsx(
-                      'px-4 py-2 rounded-md text-sm font-medium transition-colors relative group',
-                      isActive ? 'text-[#1a365d]' : 'text-gray-600 hover:text-[#1a365d]'
-                    )}
-                  >
-                    {item.label}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-0 w-full h-1 bg-[#e67e22] rounded-t-md" />
-                    )}
-                    <span className="absolute bottom-0 left-0 w-0 h-1 bg-[#1a365d] rounded-t-md transition-all duration-300 group-hover:w-full opacity-50" />
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* User Profile & Mobile Toggle */}
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="text-right">
-                  <div className="text-sm font-semibold text-gray-800">Welcome</div>
-                  <div className="text-xs text-gray-500">TAXPAYER</div>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-[#1a365d] text-white flex items-center justify-center font-bold text-sm shadow-md cursor-pointer border-2 border-white ring-2 ring-gray-100 relative group">
-                  {initial}
-                  <div className="absolute top-12 right-0 bg-white border border-gray-200 rounded-md shadow-lg w-48 py-1 hidden group-hover:block z-50">
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                      <span className="text-red-500">🚪</span> Logout
-                    </button>
+    <div className="min-h-screen bg-[#f6f8fc] text-[#1f2937] font-sans flex flex-col">
+      <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
+        <div className="max-w-[1180px] mx-auto px-4 sm:px-6">
+          <div className="h-[98px] flex items-center gap-4 xl:gap-6">
+            <div className="flex items-center gap-4 shrink-0">
+              <button type="button" onClick={() => navigate('/itr')} className="flex items-center gap-3 text-left shrink-0">
+                <div className="w-[70px] h-[70px] rounded-full border border-[#cfd8e3] bg-[#f7fafc] flex items-center justify-center shadow-[0_1px_4px_rgba(15,23,42,0.12)]">
+                  <div className="w-11 h-11 rounded-full bg-[#1d4ed8] text-white flex items-center justify-center font-bold text-[11px] leading-none text-center px-1">
+                    e-<br />Filing
                   </div>
                 </div>
-              </div>
-              <button
-                className="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+                <div className="leading-tight hidden sm:block">
+                  <div className="text-[15px] font-semibold text-[#1d4ed8] whitespace-nowrap">e-Filing <span className="text-[#6b7280] font-normal">(Anywhere Anytime)</span></div>
+                  <div className="text-[11px] text-[#6b7280] max-w-[220px] leading-[1.1]">Income Tax Department, Government of India</div>
+                </div>
               </button>
             </div>
+
+            <div className="hidden lg:flex flex-1" />
+
+            <div className="hidden xl:flex items-center gap-4 text-[11px] text-[#475569] whitespace-nowrap">
+              <span className="flex items-center gap-1.5">Call Us <span className="text-[10px] leading-none">▼</span></span>
+              <span>English</span>
+              <span className="font-semibold text-[#1d4ed8]">A</span>
+              <span className="text-[#1d4ed8]">A</span>
+              <span className="text-[#1d4ed8]">A+</span>
+            </div>
+
+            <div className="flex items-center gap-4 shrink-0 ml-4">
+              <div className="text-right leading-tight hidden sm:block">
+                <div className="font-medium text-[#111827] whitespace-nowrap">Taxpayer</div>
+                <div className="text-[10px] text-[#6b7280]">Individual</div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-[#e5e7eb] flex items-center justify-center text-sm font-semibold text-[#334155]">{initial}</div>
+            </div>
+
+            <button
+              className="flex items-center gap-2 lg:hidden text-[#1f2937] hover:text-[#1d4ed8] focus:outline-none"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-gray-200 px-2 pt-2 pb-3 space-y-1 shadow-inner">
+          <div className="lg:hidden border-t border-[#e5e7eb] bg-white px-4 py-3 space-y-1 text-sm text-[#1f3a6d]">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileMenuOpen(false)}
                 className={clsx(
-                  'block px-3 py-2 rounded-md text-base font-medium',
-                  location.pathname === item.path
-                    ? 'bg-[#f0f4f8] text-[#1a365d] border-l-4 border-[#e67e22]'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  'block px-3 py-2 rounded-md',
+                  location.pathname === item.path ? 'bg-[#eff6ff] font-semibold' : 'hover:bg-[#f8fafc]'
                 )}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="border-t border-gray-200 mt-2 pt-2">
-              <button
-                onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50"
-              >
-                Logout
-              </button>
-            </div>
+            <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="block w-full text-left px-3 py-2 rounded-md text-red-600 hover:bg-red-50">
+              Logout
+            </button>
           </div>
         )}
+
+        <div className="bg-[#173f8a] text-white hidden lg:block">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 h-11 flex items-center text-[13px] font-semibold">
+            <div className="flex items-center gap-7 h-full">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <div key={item.label} className="relative h-full flex items-center group">
+                    <Link 
+                      to={item.path} 
+                      className={clsx(
+                        'relative h-full flex items-center pt-0.5 gap-1.5 transition-colors hover:text-white', 
+                        isActive ? 'text-white' : 'text-white/80'
+                      )}
+                    >
+                      {item.label}
+                      {item.dropdownItems && (
+                        <span className="text-[9px] opacity-70 mt-0.5 group-hover:rotate-180 transition-transform duration-200">▼</span>
+                      )}
+                      {isActive && <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-white rounded-t-sm" />}
+                    </Link>
+                    
+                    {item.dropdownItems && (
+                      <div className="absolute top-full left-0 hidden group-hover:block bg-white text-[#1f2937] shadow-xl border border-[#e5e7eb] py-2 min-w-[220px] z-[60] rounded-b-md animate-in fade-in slide-in-from-top-2 duration-200">
+                        {item.dropdownItems.map((subItem, idx) => (
+                          <Link 
+                            key={idx}
+                            to={subItem.path}
+                            className="block px-4 py-2.5 hover:bg-[#eff6ff] hover:text-[#1d4ed8] text-[13px] font-medium border-b border-gray-50 last:border-0 transition-colors"
+                          >
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="ml-auto flex items-center h-full">
+              <span className="text-white/90 font-normal whitespace-nowrap text-[12px]">Session Time <span className="tracking-[0.3em] font-semibold ml-1">1 4 : 5 3</span></span>
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* ── Page Content ─────────────────────────────────────────────────── */}
       <div id="page-blur-overlay" className="vanthai-blur-overlay" />
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+      <main className="flex-1 w-full max-w-[1180px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
       </main>
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer className="bg-[#1a365d] text-white py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-semibold text-lg mb-4 text-[#e67e22]">About Portal</h3>
-              <p className="text-sm text-gray-300">
-                This is a secure tax filing portal designed for ease of use.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg mb-4 text-[#e67e22]">Help & Support</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><a href="#" className="hover:text-white underline">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white underline">FAQs</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg mb-4 text-[#e67e22]">Important Links</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><a href="#" className="hover:text-white underline">Terms & Conditions</a></li>
-                <li><a href="#" className="hover:text-white underline">Privacy Policy</a></li>
-              </ul>
-            </div>
+      <footer className="bg-white border-t border-[#e5e7eb] text-[#4b5563]">
+        <div className="max-w-[1180px] mx-auto px-4 py-4 text-[11px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#0f172a] text-white flex items-center justify-center text-[9px] font-bold">gov</div>
+            <span>india.gov.in</span>
+            <span className="hidden sm:inline text-[#94a3b8]">national portal of india</span>
           </div>
-          <div className="border-t border-[#2a4365] mt-6 pt-6 text-center text-xs text-gray-400">
-            © {new Date().getFullYear()} Tax e-Portal. All rights reserved.
+          <div className="flex flex-wrap gap-3 sm:justify-end">
+            <span>Feedback</span>
+            <span>(Website Policies)</span>
+            <span>Accessibility Statement</span>
+            <span>Site Map</span>
+            <span>Browser Support</span>
+            <span>Coll/Browser Help</span>
           </div>
+          <div className="sm:text-right text-[#6b7280]">Last reviewed and updated on : 2-May-2026</div>
         </div>
       </footer>
 
-      {/* ── VanthAI Chat Widget (specific for ITR) ────────────────────── */}
-      <VanthAIChatWidget app="itr" />
+      {showChatWidget && <VanthAIChatWidget app="itr" />}
     </div>
   );
 }
