@@ -10,6 +10,7 @@ import { ITR_ALLOWED } from '../../apps/itr/tours/index';
 import { WS_ENDPOINTS } from '../../config/ws';
 import type { ActionEnvelope, WSEnvelope } from '../../types/ws';
 import { Bot, X, Mic, MicOff, Send, RotateCcw, BrainCircuit, ChevronDown, ChevronUp } from 'lucide-react';
+import XYFlowRenderer from './XYFlowRenderer';
 
 interface ChatMessage {
   id: string;
@@ -19,6 +20,7 @@ interface ChatMessage {
   thinking?: string;
   toolCalls?: string[];
   image?: string;
+  flowData?: { nodes: any[], edges: any[] };
 }
 
 interface Props {
@@ -82,6 +84,17 @@ export default function VanthAIChatWidget({ app }: Props) {
     onPrefill: (data) => {
       setPrefillData(data);
       // Open dialog will be handled by PatientAppointments listening to context
+    },
+    onShowFlow: (nodes, edges) => {
+      setMessages(prev => [
+        ...prev,
+        { 
+          id: Math.random().toString(36).substring(7), 
+          role: 'assistant', 
+          content: 'Here is the interactive process flow:', 
+          flowData: { nodes, edges }
+        }
+      ]);
     }
   });
 
@@ -346,6 +359,18 @@ export default function VanthAIChatWidget({ app }: Props) {
                   {msg.content || (msg.isStreaming && <span className="text-slate-400 italic">Thinking…</span>)}
                   {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-teal-500 ml-1 rounded-sm animate-pulse align-middle" />}
                 </div>
+
+                {msg.image && (
+                  <div className="mt-2 mb-1 rounded-lg overflow-hidden border border-slate-200">
+                    <img src={msg.image} alt="User upload" className="max-w-full h-auto" />
+                  </div>
+                )}
+
+                {msg.flowData && (
+                  <div className="mt-2 mb-1">
+                    <XYFlowRenderer nodes={msg.flowData.nodes} edges={msg.flowData.edges} />
+                  </div>
+                )}
 
                 {/* Thinking & Tools Dropdown */}
                 {msg.role === 'assistant' && (msg.thinking || (msg.toolCalls && msg.toolCalls.length > 0)) && (
