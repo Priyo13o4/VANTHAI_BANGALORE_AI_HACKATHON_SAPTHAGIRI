@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import VanthAIChatWidget from '../chat/VanthAIChatWidget';
+import SpotlightOverlay from '../guidance/SpotlightOverlay';
 
 const DRAWER_WIDTH = 260;
 const _ = DRAWER_WIDTH; // suppress unused warning — kept for reference
@@ -146,6 +147,9 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* VanthAI Spotlight Guidance Overlay */}
+      <SpotlightOverlay />
 
       {/* ── VanthAI Chat Widget (shared between both apps) ────────────────── */}
       <VanthAIChatWidget app={section} />

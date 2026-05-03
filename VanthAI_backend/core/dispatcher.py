@@ -15,7 +15,7 @@ logger = structlog.get_logger(__name__)
 # ── Envelope types (WS frames sent to frontend) ────────────────────────────────
 
 MessageType = Literal["text", "quick_reply", "step_flow", "mermaid"]
-ActionType = Literal["navigate", "highlight", "autofill", "navigate+tour", "fillForm", "none"]
+ActionType = Literal["navigate", "highlight", "spotlight", "autofill", "navigate+tour", "fillForm", "clearHighlight", "none"]
 
 
 class PopoverConfig(BaseModel):

@@ -1,0 +1,2 @@
+# Form Declaration
+Final verification section where the taxpayer declares the information provided is true and correct, selecting the verification method (e-Verify via Aadhaar OTP, EVC, or sending physical ITR-V).

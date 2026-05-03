@@ -1,6 +1,6 @@
 // src/apps/itr/tours/index.ts — STUB (Phase 5)
-import type { TourStepConfig } from '../../../hooks/useTour';
-import { registerTours } from '../../../hooks/useTour';
+import type { SpotlightStep } from '../../../components/guidance/spotlightStore';
+import { registerSpotlightTours } from '../../../hooks/useSpotlight';
 
 export const ITR_ALLOWED = new Set<string>([
   'itr-overview-start-btn',
@@ -18,14 +18,14 @@ export const ITR_ALLOWED = new Set<string>([
 ]);
 
 // Tour configs — stubs, to be filled in Phase 5
-const fillSalaryTour: TourStepConfig[] = [];   // TODO
-const findForm16aTour: TourStepConfig[] = [];  // TODO
+const fillSalaryTour: SpotlightStep[] = [];   // TODO
+const findForm16aTour: SpotlightStep[] = [];  // TODO
 
-const ITR_TOURS: Record<string, TourStepConfig[]> = {
+const ITR_TOURS: Record<string, SpotlightStep[]> = {
   'fill-salary': fillSalaryTour,
   'find-form16a': findForm16aTour,
 };
 
-registerTours(ITR_TOURS);
+registerSpotlightTours(ITR_TOURS);
 
 export default ITR_TOURS;

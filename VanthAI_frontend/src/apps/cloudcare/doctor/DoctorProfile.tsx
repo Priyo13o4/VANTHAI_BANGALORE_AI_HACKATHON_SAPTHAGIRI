@@ -176,41 +176,50 @@ export default function DoctorProfile() {
             <TextField
               fullWidth
               label="Full Name"
+              name="name"
               value={profileData.name}
               onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
               disabled={!isEditing}
               InputProps={{
                 startAdornment: <Badge sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
+              data-vanthai-id="cloudcare-doctor-profile-name"
             />
             <TextField
               fullWidth
               label="Age"
+              name="age"
               type="number"
               value={profileData.age}
               onChange={(e) => setProfileData({ ...profileData, age: Number(e.target.value) })}
               disabled={!isEditing}
+              data-vanthai-id="cloudcare-doctor-profile-age"
             />
             <TextField
               fullWidth
               label="Gender"
+              name="gender"
               value={profileData.gender}
               onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
               disabled={!isEditing}
+              data-vanthai-id="cloudcare-doctor-profile-gender"
             />
             <TextField
               fullWidth
               label="Specialization"
+              name="specializations"
               value={profileData.specializations}
               onChange={(e) => setProfileData({ ...profileData, specializations: e.target.value })}
               disabled={!isEditing}
               InputProps={{
                 startAdornment: <LocalHospital sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
+              data-vanthai-id="cloudcare-doctor-profile-specialization"
             />
             <TextField
               fullWidth
               label="Email"
+              name="email"
               type="email"
               value={profileData.email}
               disabled
@@ -218,16 +227,19 @@ export default function DoctorProfile() {
                 startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
               helperText="Email cannot be changed"
+              data-vanthai-id="cloudcare-doctor-profile-email"
             />
             <TextField
               fullWidth
               label="Phone"
+              name="contact"
               value={profileData.contact}
               onChange={(e) => setProfileData({ ...profileData, contact: e.target.value })}
               disabled={!isEditing}
               InputProps={{
                 startAdornment: <Phone sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
+              data-vanthai-id="cloudcare-doctor-profile-contact"
             />
           </Box>
 

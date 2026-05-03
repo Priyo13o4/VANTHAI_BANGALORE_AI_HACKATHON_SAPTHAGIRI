@@ -25,13 +25,15 @@ export default function BusinessDetails() {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSave = () => {
     localStorage.setItem('form18_business_details', JSON.stringify(formData));
     navigate(-1);
   };
+
 
   const isFormValid = formData.businessName && formData.flat && formData.pin;
 
@@ -206,21 +208,47 @@ export default function BusinessDetails() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2 max-w-[400px]">
                   <label className="block text-[11px] text-[#718096]">Country/Region *</label>
-                  <select disabled className="w-full h-10 px-3 bg-[#f3f4f6] border border-[#d1d5db] rounded-sm text-[13px]"><option>India</option></select>
+                  <select
+                    name="projCountry"
+                    value={formData.projCountry}
+                    onChange={handleChange}
+                    disabled
+                    className="w-full h-10 px-3 bg-[#f3f4f6] border border-[#d1d5db] rounded-sm text-[13px]"
+                  >
+                    <option value="India">India</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4 lg:col-span-2">
                   <div className="space-y-2 max-w-[400px]">
                     <label className="block text-[11px] text-[#718096]">Flat / Door / Building *</label>
-                    <input type="text" className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]" />
+                    <input
+                      type="text"
+                      name="projFlat"
+                      value={formData.projFlat}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                    />
                   </div>
                   <div className="space-y-2 max-w-[400px]">
-                    <label className="block text-[11px] text-[#718096]">Read / Street / Block / Sector</label>
-                    <input type="text" className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]" />
+                    <label className="block text-[11px] text-[#718096]">Road / Street / Block / Sector</label>
+                    <input
+                      type="text"
+                      name="projRoad"
+                      value={formData.projRoad}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2 max-w-[200px]">
                   <label className="block text-[11px] text-[#718096]">PIN Code *</label>
-                  <input type="text" className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]" />
+                  <input
+                    type="text"
+                    name="projPin"
+                    value={formData.projPin}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                  />
                 </div>
               </div>
             </div>
