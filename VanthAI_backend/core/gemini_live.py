@@ -48,10 +48,38 @@ print("DEBUG: [GEMINI LIVE] Loading v1.0.3 (Multi-turn support)")
 _genai_client = genai.Client(api_key=settings.google_ai_api_key)
 
 
-def _build_voice_tools(available_routes: list[str]) -> types.Tool:
-    """Gemini function-call tools for voice: navigation + on-screen element highlighting."""
-    return types.Tool(
-        function_declarations=[
+def _build_voice_tools(available_routes: list[str], app: str) -> types.Tool:
+    """Gemini function-call tools for voice: shared tools + app-specific tools."""
+    function_declarations = [
+
+        types.FunctionDeclaration(
+            name="spotlight_element",
+            description=(
+                "Point the user's attention to a specific UI element using the Spotlight overlay. "
+                "This draws a glowing ring around the element with a floating popover. "
+                "Use this when the user asks WHERE something is or when you want to draw attention "
+                "to a specific part of the page after navigating."
+            ),
+            parameters=types.Schema(
+                type="OBJECT",
+                properties={
+                    "element_id": types.Schema(
+                        type="STRING",
+                        description="The data-vanthai-id value of the element to spotlight. Valid values: cloudcare-appointments-book-btn, cloudcare-vitals-alert-badge, etc.",
+                    ),
+                    "title": types.Schema(
+                        type="STRING",
+                        description="Short title for the popover (e.g. 'Book Appointment').",
+                    ),
+                    "description": types.Schema(
+                        type="STRING",
+                        description="One sentence explaining what this element does.",
+                    ),
+                },
+                required=["element_id"],
+            ),
+        ),
+
             types.FunctionDeclaration(
                 name="navigate_to",
                 description=(
@@ -115,15 +143,184 @@ def _build_voice_tools(available_routes: list[str]) -> types.Tool:
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
-                        "specialty": types.Schema(
+                        "specialization": types.Schema(
                             type="STRING",
-                            description="Doctor's specialty (e.g. 'Cardiology', 'Endocrinology').",
+                            description="Doctor's specialization (e.g. 'Cardiology', 'Endocrinology').",
                         ),
                     },
                 ),
             ),
-        ]
-    )
+            types.FunctionDeclaration(
+                name="prefill_appointment_form",
+                description="Pre-fill the appointment booking form with a specific doctor ID. This opens the form dialog automatically.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "doctor_id": types.Schema(
+                            type="INTEGER",
+                            description="The ID of the doctor to pre-fill (e.g. 1 for Dr. Sarah Johnson).",
+                        ),
+                        "date": types.Schema(
+                            type="STRING",
+                            description="Optional appointment date in YYYY-MM-DD format.",
+                        ),
+                        "time": types.Schema(
+                            type="STRING",
+                            description="Optional appointment time in HH:mm format.",
+                        ),
+                    },
+                    required=["doctor_id"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="query_upcoming_appointments",
+                description="Query the list of upcoming appointments for a patient.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "patient_id": types.Schema(
+                            type="INTEGER",
+                            description="Integer patient ID.",
+                        ),
+                    },
+                    required=["patient_id"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="query_latest_vitals",
+                description="Query the most recent vital signs (heart rate, BP, etc.) for a patient.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "patient_id": types.Schema(
+                            type="INTEGER",
+                            description="Integer patient ID.",
+                        ),
+                    },
+                    required=["patient_id"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="query_active_prescriptions",
+                description="Query the active medications and prescriptions for a patient.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "patient_id": types.Schema(
+                            type="INTEGER",
+                            description="Integer patient ID.",
+                        ),
+                    },
+                    required=["patient_id"],
+                ),
+            ),
+    ]
+
+    if app == "itr":
+        function_declarations.extend([
+            types.FunctionDeclaration(
+                name="form18_fill_sequence",
+                description="Start Form 18 sequence by navigating to the Form 18 landing page.",
+                parameters=types.Schema(type="OBJECT", properties={}),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_assessee_custom",
+                description="Auto-fill assessee details in Form 18 using provided values. Partial fields are supported.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "name": types.Schema(type="STRING"),
+                        "address": types.Schema(type="STRING"),
+                        "pan": types.Schema(type="STRING"),
+                        "status": types.Schema(type="STRING"),
+                        "email": types.Schema(type="STRING"),
+                        "contact": types.Schema(type="STRING"),
+                        "residentialStatus": types.Schema(type="STRING"),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_business_custom",
+                description="Auto-fill business details in Form 18 using provided values. Partial fields are supported.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "businessName": types.Schema(type="STRING"),
+                        "flat": types.Schema(type="STRING"),
+                        "road": types.Schema(type="STRING"),
+                        "pin": types.Schema(type="STRING"),
+                        "postOffice": types.Schema(type="STRING"),
+                        "area": types.Schema(type="STRING"),
+                        "district": types.Schema(type="STRING"),
+                        "state": types.Schema(type="STRING"),
+                        "projectName": types.Schema(type="STRING"),
+                        "projFlat": types.Schema(type="STRING"),
+                        "projRoad": types.Schema(type="STRING"),
+                        "projPin": types.Schema(type="STRING"),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_project_custom",
+                description="Auto-fill project details in Form 18 using provided values. Partial fields are supported.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "flat": types.Schema(type="STRING"),
+                        "road": types.Schema(type="STRING"),
+                        "pin": types.Schema(type="STRING"),
+                        "postOffice": types.Schema(type="STRING"),
+                        "area": types.Schema(type="STRING"),
+                        "district": types.Schema(type="STRING"),
+                        "state": types.Schema(type="STRING"),
+                        "totalUnits": types.Schema(type="STRING"),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_tax_year",
+                description="Auto-fill the Form 18 landing page with a specific tax year.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "taxYear": types.Schema(
+                            type="STRING",
+                            description="The tax year to fill (e.g. '2027-28').",
+                        ),
+                    },
+                    required=["taxYear"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_assessee",
+                description="Auto-fill assessee details in Form 18 with sample/demo data.",
+                parameters=types.Schema(type="OBJECT", properties={}),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_business",
+                description="Auto-fill business details in Form 18 with sample/demo data.",
+                parameters=types.Schema(type="OBJECT", properties={}),
+            ),
+            types.FunctionDeclaration(
+                name="fill_form_18_project",
+                description="Auto-fill project details in Form 18 with sample/demo data.",
+                parameters=types.Schema(type="OBJECT", properties={}),
+            ),
+            types.FunctionDeclaration(
+                name="highlight_form18_field",
+                description="Highlight a specific Form 18 field by its HTML name attribute.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "field_name": types.Schema(type="STRING"),
+                        "popover_text": types.Schema(type="STRING"),
+                    },
+                    required=["field_name"],
+                ),
+            ),
+        ])
+
+    return types.Tool(function_declarations=function_declarations)
 
 
 class GeminiLiveVoiceHandler(BaseWebSocketHandler):
@@ -215,8 +412,27 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                         await session.send_realtime_input(
                             activity_end=types.ActivityEnd()
                         )
-                except Exception:
-                    pass  # Malformed control frame — ignore
+                    elif ctrl.get("type") == "page_update":
+                        # User navigated to a new page — inform Gemini Live context
+                        new_page = ctrl.get("page", "/itr")
+                        logger.info("voice_pump_client.page_update", session_id=self.session_id, page=new_page)
+                        
+                        # Load page knowledge
+                        from agents.itr.prompts import load_page_markdown_from_disk
+                        page_markdown = load_page_markdown_from_disk(new_page, kb_base="/app/KB")
+                        
+                        context_msg = (
+                            f"[SYSTEM CONTEXT UPDATE]\n"
+                            f"User has just navigated to: {new_page}\n"
+                            f"Do NOT offer to navigate there — user is already there.\n"
+                            f"Page content/knowledge:\n{page_markdown or 'No specific knowledge for this page.'}"
+                        )
+                        
+                        await session.send_realtime_input(
+                            text=context_msg
+                        )
+                except Exception as exc:
+                    logger.warning("voice_pump_client.control_frame_error", error=str(exc))
 
     async def _pump_gemini_to_client(self, session) -> None:
         """
@@ -291,6 +507,61 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
         """Handle function calls without blocking the main event pump."""
         try:
             for fc in tool_call.function_calls:
+                logger.info(
+                    "voice_pump_gemini.tool_call_received",
+                    session_id=self.session_id,
+                    tool_name=fc.name,
+                    args=fc.args or {},
+                )
+
+                if self.app == "itr" and fc.name in {
+                    "form18_fill_sequence",
+                    "fill_form_18_tax_year",
+                    "fill_form_18_assessee",
+                    "fill_form_18_assessee_custom",
+                    "fill_form_18_business",
+                    "fill_form_18_business_custom",
+                    "fill_form_18_project",
+                    "fill_form_18_project_custom",
+                    "highlight_form18_field",
+                }:
+                    from agents.itr import tools as itr_tools
+
+                    tool_map = {
+                        "form18_fill_sequence": itr_tools.form18_fill_sequence,
+                        "fill_form_18_tax_year": itr_tools.fill_form_18_tax_year,
+                        "fill_form_18_assessee": itr_tools.fill_form_18_assessee,
+                        "fill_form_18_assessee_custom": itr_tools.fill_form_18_assessee_custom,
+                        "fill_form_18_business": itr_tools.fill_form_18_business,
+                        "fill_form_18_business_custom": itr_tools.fill_form_18_business_custom,
+                        "fill_form_18_project": itr_tools.fill_form_18_project,
+                        "fill_form_18_project_custom": itr_tools.fill_form_18_project_custom,
+                        "highlight_form18_field": itr_tools.highlight_form18_field,
+                    }
+
+                    args = fc.args or {}
+                    try:
+                        result_json_str = await tool_map[fc.name].ainvoke(args)
+                        try:
+                            parsed = json.loads(result_json_str)
+                            if isinstance(parsed, dict) and parsed.get("action"):
+                                await self._send_json({"type": "action", **parsed})
+                        except Exception:
+                            pass
+
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"result": result_json_str},
+                                )
+                            ]
+                        )
+                    except Exception as exc:
+                        logger.error("voice_pump_gemini.itr_tool_error", tool_name=fc.name, error=str(exc))
+                    continue
+
                 if fc.name == "navigate_to":
                     url = (fc.args or {}).get("url", "")
                     if url:
@@ -308,6 +579,35 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                                     name=fc.name,
                                     id=fc.id,
                                     response={"result": f"Navigated to {url}"},
+                                )
+                            ]
+                        )
+                    except Exception as exc:
+                        logger.warning("voice_pump_gemini.tool_response_error", error=str(exc))
+
+                elif fc.name == "spotlight_element":
+                    args = fc.args or {}
+                    element_id = args.get("element_id", "")
+                    title = args.get("title", "")
+                    description = args.get("description", "")
+                    if element_id:
+                        await self._send_json({
+                            "type": "action",
+                            "action": "spotlight",
+                            "element": element_id,
+                            "selector": f'[data-vanthai-id="{element_id}"]',
+                            "popover": {
+                                "title": title,
+                                "description": description
+                            }
+                        })
+                    try:
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"result": f"Spotlighted {element_id}"},
                                 )
                             ]
                         )
@@ -347,7 +647,6 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                     from agents.cloudcare.tools import query_health_records
                     pid = (fc.args or {}).get("patient_id") or 1
                     try:
-                        # Use .ainvoke() which is the standard way to execute LangChain tools
                         result_json = await query_health_records.ainvoke({"patient_id": pid})
                         await session.send_tool_response(
                             function_responses=[
@@ -360,11 +659,12 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                         )
                     except Exception as exc:
                         logger.error("voice_pump_gemini.query_records_error", error=str(exc))
+
                 elif fc.name == "query_doctors":
                     from agents.cloudcare.tools import query_doctors
-                    specialty = (fc.args or {}).get("specialty")
+                    spec = (fc.args or {}).get("specialization") or (fc.args or {}).get("specialty")
                     try:
-                        result_json = await query_doctors.ainvoke({"specialty": specialty})
+                        result_json = await query_doctors.ainvoke({"specialization": spec})
                         await session.send_tool_response(
                             function_responses=[
                                 types.FunctionResponse(
@@ -376,15 +676,88 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                         )
                     except Exception as exc:
                         logger.error("voice_pump_gemini.query_doctors_error", error=str(exc))
+                
+                elif fc.name == "prefill_appointment_form":
+                    from agents.cloudcare.tools import prefill_appointment_form
+                    args = fc.args or {}
+                    doc_id = args.get("doctor_id")
+                    pref_date = args.get("date")
+                    pref_time = args.get("time")
+                    
+                    if doc_id:
+                        # Ensure doc_id is int for tool invocation
+                        try:
+                            clean_doc_id = int(doc_id)
+                        except (ValueError, TypeError):
+                            clean_doc_id = 1 # fallback to default doctor
+                            
+                        result_json = await prefill_appointment_form.ainvoke({
+                            "doctor_id": clean_doc_id,
+                            "date": pref_date,
+                            "time": pref_time
+                        })
+                        try:
+                            res_data = json.loads(result_json)
+                            if res_data.get("success"):
+                                await self._send_json({
+                                    "type": "action",
+                                    "action": "prefill_form",
+                                    "doctorId": str(doc_id),
+                                    "department": res_data.get("department", ""),
+                                    "date": pref_date,
+                                    "time": pref_time,
+                                    "message": f"Pre-filling form for Dr. {res_data.get('doctor_name', 'Sarah')}",
+                                    "message_type": "text",
+                                })
+                                
+                                # If date and time are also provided, highlight the confirm button
+                                if pref_date and pref_time:
+                                    await self._send_json({
+                                        "type": "action",
+                                        "action": "spotlight",
+                                        "element": "cloudcare-appointments-confirm-btn",
+                                        "selector": '[data-vanthai-id="cloudcare-appointments-confirm-btn"]',
+                                        "popover": {
+                                            "title": "Confirm Appointment",
+                                            "description": f"Click here to schedule your appointment with {res_data.get('doctor_name', 'your doctor')}."
+                                        }
+                                    })
+                        except Exception:
+                            pass
+                        
                         await session.send_tool_response(
                             function_responses=[
                                 types.FunctionResponse(
                                     name=fc.name,
                                     id=fc.id,
-                                    response={"error": str(exc)},
+                                    response={"result": result_json},
                                 )
                             ]
                         )
+
+                elif fc.name == "query_upcoming_appointments":
+                    from agents.cloudcare.tools import query_upcoming_appointments
+                    pid = (fc.args or {}).get("patient_id") or 1
+                    result = await query_upcoming_appointments.ainvoke({"patient_id": pid})
+                    await session.send_tool_response(
+                        function_responses=[types.FunctionResponse(name=fc.name, id=fc.id, response={"result": result})]
+                    )
+
+                elif fc.name == "query_latest_vitals":
+                    from agents.cloudcare.tools import query_latest_vitals
+                    pid = (fc.args or {}).get("patient_id") or 1
+                    result = await query_latest_vitals.ainvoke({"patient_id": pid})
+                    await session.send_tool_response(
+                        function_responses=[types.FunctionResponse(name=fc.name, id=fc.id, response={"result": result})]
+                    )
+
+                elif fc.name == "query_active_prescriptions":
+                    from agents.cloudcare.tools import query_active_prescriptions
+                    pid = (fc.args or {}).get("patient_id") or 1
+                    result = await query_active_prescriptions.ainvoke({"patient_id": pid})
+                    await session.send_tool_response(
+                        function_responses=[types.FunctionResponse(name=fc.name, id=fc.id, response={"result": result})]
+                    )
 
         except Exception as exc:
             logger.error("voice_handle_tool_call.error", error=str(exc))
@@ -414,7 +787,7 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
             input_audio_transcription=types.AudioTranscriptionConfig(),   # user speech → text
             output_audio_transcription=types.AudioTranscriptionConfig(),  # model audio → text
             system_instruction=self.system_prompt,
-            tools=[_build_voice_tools(self.available_routes)],
+            tools=[_build_voice_tools(self.available_routes, self.app)],
         )
 
         try:

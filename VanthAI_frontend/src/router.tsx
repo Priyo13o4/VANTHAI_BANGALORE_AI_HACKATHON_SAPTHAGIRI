@@ -27,6 +27,7 @@ import PatientRecords from './apps/cloudcare/patient/PatientRecords';
 import PatientAppointments from './apps/cloudcare/patient/PatientAppointments';
 import PatientVitals from './apps/cloudcare/patient/PatientVitals';
 import PatientPrescriptions from './apps/cloudcare/patient/PatientPrescriptions';
+import PatientProfile from './apps/cloudcare/patient/PatientProfile';
 
 import DoctorDashboard from './apps/cloudcare/doctor/DoctorDashboard';
 import DoctorPatients from './apps/cloudcare/doctor/DoctorPatients';
@@ -78,6 +79,7 @@ const router = createBrowserRouter([
       { path: 'patient/vitals', element: <PatientVitals /> },
       { path: 'patient/wearables', element: <PatientVitals /> }, // alias
       { path: 'patient/prescriptions', element: <PatientPrescriptions /> },
+      { path: 'patient/profile', element: <PatientProfile /> },
 
       { path: 'doctor', element: <DoctorDashboard /> },
       { path: 'doctor/patients', element: <DoctorPatients /> },

@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useChatApi } from '../../hooks/useChatApi';
 import { useAIDispatcher } from '../../hooks/useAIDispatcher';
 import { useVoiceStreamer } from '../../hooks/useVoiceStreamer';
+import { useFormPrefill } from '../../contexts/FormPrefillContext';
 import { CLOUDCARE_ALLOWED } from '../../apps/cloudcare/tours/index';
 import { ITR_ALLOWED } from '../../apps/itr/tours/index';
 import { WS_ENDPOINTS } from '../../config/ws';
@@ -15,7 +16,9 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   isStreaming?: boolean;
+  thinking?: string;
   toolCalls?: string[];
+  image?: string;
 }
 
 interface Props {
@@ -43,6 +46,8 @@ export default function VanthAIChatWidget({ app }: Props) {
   });
 
   const [input, setInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
@@ -70,21 +75,37 @@ export default function VanthAIChatWidget({ app }: Props) {
 
   // ── Dispatcher (Tools) ──
   const allowedElements = app === 'cloudcare' ? CLOUDCARE_ALLOWED : ITR_ALLOWED;
-  const { dispatch: dispatchAction } = useAIDispatcher({ app, allowedElements });
+  const { setPrefillData } = useFormPrefill();
+  const { dispatch: dispatchAction } = useAIDispatcher({ 
+    app, 
+    allowedElements,
+    onPrefill: (data) => {
+      setPrefillData(data);
+      // Open dialog will be handled by PatientAppointments listening to context
+    }
+  });
 
   // ── Text Handler (HTTP/SSE via useChatApi) ──
   const onChatMessage = useCallback((envelope: WSEnvelope) => {
     if (envelope.type === 'token') {
       setIsThinking(false);
-      setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        if (last && last.role === 'assistant' && last.id === streamingIdRef.current) {
-          return [...prev.slice(0, -1), { ...last, content: last.content + envelope.content }];
-        }
+      // Track streaming by ref to avoid race conditions
+      if (!streamingIdRef.current) {
         const newId = Math.random().toString(36).substring(7);
         streamingIdRef.current = newId;
-        return [...prev, { id: newId, role: 'assistant', content: envelope.content, isStreaming: true }];
-      });
+        setMessages((prev) => [...prev, { id: newId, role: 'assistant', content: envelope.content, isStreaming: true }]);
+      } else {
+        // Append to existing streaming message
+        setMessages((prev) => {
+          const idx = prev.findIndex((m) => m.id === streamingIdRef.current);
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = { ...updated[idx], content: updated[idx].content + envelope.content };
+            return updated;
+          }
+          return prev;
+        });
+      }
     } else if (envelope.type === 'done') {
       setMessages((prev) => prev.map((m) => m.id === streamingIdRef.current ? { ...m, isStreaming: false } : m));
       streamingIdRef.current = null;
@@ -94,13 +115,12 @@ export default function VanthAIChatWidget({ app }: Props) {
       if (envelope.content) {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
-          if (last && last.role === 'assistant' && last.id === streamingIdRef.current) {
-            const toolCalls = [...(last.toolCalls || []), envelope.content];
-            return [...prev.slice(0, -1), { ...last, toolCalls }];
+          if (last?.role === 'assistant' && last?.isStreaming) {
+            return [...prev.slice(0, -1), { ...last, thinking: (last.thinking || '') + envelope.content }];
           }
           const newId = Math.random().toString(36).substring(7);
           streamingIdRef.current = newId;
-          return [...prev, { id: newId, role: 'assistant', content: '', toolCalls: [envelope.content] }];
+          return [...prev, { id: newId, role: 'assistant', content: '', thinking: envelope.content, isStreaming: true }];
         });
       }
     } else if (envelope.type === 'action') {
@@ -119,7 +139,7 @@ export default function VanthAIChatWidget({ app }: Props) {
     ? `${voiceBase}?page=${encodeURIComponent(location.pathname)}${sessionId ? `&session_id=${sessionId}` : ''}`
     : voiceBase;
 
-  const { startStreaming, stopStreaming, isStreaming } = useVoiceStreamer({
+  const { startStreaming, stopStreaming, isStreaming, sendMessage: sendVoiceControl } = useVoiceStreamer({
     url: voiceUrl,
     onTranscript: ({ text, role }) => {
       setMessages(prev => {
@@ -165,6 +185,24 @@ export default function VanthAIChatWidget({ app }: Props) {
     },
   });
 
+  const lastSentPageRef = useRef<string | null>(null);
+
+  // ── Sync Page Context (Voice Only) ──
+  useEffect(() => {
+    if (isVoiceMode && isStreaming && location.pathname !== lastSentPageRef.current) {
+      lastSentPageRef.current = location.pathname;
+      sendVoiceControl(JSON.stringify({
+        type: 'page_update',
+        page: location.pathname
+      }));
+    }
+    
+    // Reset ref when stopping voice mode to ensure it resyncs on next start
+    if (!isVoiceMode || !isStreaming) {
+      lastSentPageRef.current = null;
+    }
+  }, [location.pathname, isVoiceMode, isStreaming, sendVoiceControl]);
+
   const handleToggleVoice = useCallback(async () => {
     voiceTurnIdRef.current = {}; // Always clear turn state on toggle
     if (isVoiceMode) {
@@ -178,13 +216,29 @@ export default function VanthAIChatWidget({ app }: Props) {
 
   const handleSend = () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text && !selectedImage) return;
     
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: text }]);
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: text, image: selectedImage || undefined }]);
     setInput('');
+    const imagePayload = selectedImage;
+    setSelectedImage(null);
     
     setIsThinking(true);
-    sendMessage(text);
+    sendMessage(text, {
+      imageBase64: imagePayload ? imagePayload.split(',')[1] : undefined,
+      imageMimeType: imagePayload ? imagePayload.split(';')[0].split(':')[1] : undefined
+    });
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleClearChat = () => {
@@ -288,26 +342,37 @@ export default function VanthAIChatWidget({ app }: Props) {
               )}>
                 
                 {/* Content */}
-                <div className="break-words">
-                  {msg.content}
-                  {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-teal-500 ml-1 rounded-sm animate-pulse" />}
+                <div className="break-words font-medium">
+                  {msg.content || (msg.isStreaming && <span className="text-slate-400 italic">Thinking…</span>)}
+                  {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-teal-500 ml-1 rounded-sm animate-pulse align-middle" />}
                 </div>
 
-                {/* Thinking Dropdown */}
-                {msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0 && (
+                {/* Thinking & Tools Dropdown */}
+                {msg.role === 'assistant' && (msg.thinking || (msg.toolCalls && msg.toolCalls.length > 0)) && (
                   <div className="mt-3 pt-2 border-t border-teal-100/80">
                     <button
                       onClick={() => toggleThinkingBox(msg.id)}
                       className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-teal-700 transition-colors uppercase tracking-tight"
                     >
                       <BrainCircuit size={13} />
-                      {expandedThinking[msg.id] ? 'Hide process' : 'Show process'}
+                      {expandedThinking[msg.id] ? 'Hide reasoning' : 'Show reasoning'}
                       {expandedThinking[msg.id] ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                     </button>
                     
                     {expandedThinking[msg.id] && (
-                      <div className="mt-2 space-y-1.5 bg-teal-50/80 rounded-lg p-2.5 border border-teal-100/60">
-                        {msg.toolCalls.map((tc, i) => {
+                      <div className="mt-2 space-y-2 bg-teal-50/80 rounded-lg p-3 border border-teal-100/60 max-h-[200px] overflow-y-auto">
+                        {/* Thinking Section */}
+                        {msg.thinking && (
+                          <div className="text-[11px] text-slate-600 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                            {msg.thinking}
+                          </div>
+                        )}
+                        
+                        {/* Tool Calls Section */}
+                        {msg.toolCalls && msg.toolCalls.length > 0 && msg.thinking && (
+                          <div className="border-t border-teal-100/60 pt-2" />
+                        )}
+                        {msg.toolCalls && msg.toolCalls.map((tc, i) => {
                           const isSuccess = tc.includes('(success)');
                           const isError = tc.includes('(error)');
                           

@@ -21,6 +21,7 @@ import { useSpotlight } from './useSpotlight';
 interface UseAIDispatcherOptions {
   app: 'cloudcare' | 'itr';
   allowedElements: Set<string>;
+  onPrefill?: (data: { doctorId?: string; department?: string; hospitalId?: string; date?: string; time?: string }) => void;
 }
 
 interface UseAIDispatcherReturn {
@@ -30,6 +31,7 @@ interface UseAIDispatcherReturn {
 export function useAIDispatcher({
   app,
   allowedElements,
+  onPrefill,
 }: UseAIDispatcherOptions): UseAIDispatcherReturn {
   const navigate = useNavigate();
   const { startTour, highlight, clearHighlight } = useSpotlight(app);
@@ -56,33 +58,69 @@ export function useAIDispatcher({
 
       // ── New blocks (added after ERP-SIH blocks, do NOT touch above) ──────────
 
-      // action: highlight / spotlight (VanthAI Spotlight — replaces Driver.js)
-      else if ((parsed.action === 'highlight' || parsed.action === 'spotlight') && parsed.element) {
-        const selector = parsed.element;
-        const normalizedId = selector.replace(/\[data-vanthai-id=['"]?([^'"\\]+)['"]?\]/i, '$1');
-        if (allowedElements.has(normalizedId) || allowedElements.has(selector)) {
+      // action: autofill (preferred name for fillForm; highlights filled fields)
+      else if (parsed.action === 'autofill' && parsed.fill_data) {
+        const applyFill = () => {
+          autoFillForm(parsed.fill_data!);
+          highlightFilledFields(Object.keys(parsed.fill_data!));
+        };
+
+        // If a target URL is provided and we are not on that route, navigate first then retry-fill.
+        if (parsed.url && window.location.pathname !== parsed.url) {
+          setTimeout(() => navigate(parsed.url!), 200);
+
+          let attempts = 0;
+          const maxAttempts = 18;
+          const retryTimer = window.setInterval(() => {
+            attempts += 1;
+            const keys = Object.keys(parsed.fill_data || {});
+            const hasTargetInput = keys.some((key) => !!document.querySelector(`[name="${key}"]`));
+            if (window.location.pathname === parsed.url && hasTargetInput) {
+              window.clearInterval(retryTimer);
+              applyFill();
+            } else if (attempts >= maxAttempts) {
+              window.clearInterval(retryTimer);
+              applyFill();
+            }
+          }, 200);
+          return;
+        }
+
+        applyFill();
+        return;
+      }
+
+      // action: highlight — also dispatch custom event for Form 18
+      else if ((parsed.action === 'highlight' || parsed.action === 'spotlight') && (parsed.selector || parsed.element)) {
+        // Use selector if provided, otherwise construct from element ID
+        const selector = parsed.selector || `[data-vanthai-id="${parsed.element}"]`;
+        const normalizedId = parsed.element || selector.replace(/\[data-vanthai-id=['"]?([^'"\\]+)['"]?\]/i, '$1');
+        const isItrForm18Selector = app === 'itr' && (
+          selector.startsWith('[name="') ||
+          selector.includes('[data-vanthai-id="') ||
+          normalizedId.endsWith('-root')
+        );
+
+        if (allowedElements.has(normalizedId) || allowedElements.has(selector) || isItrForm18Selector) {
           highlight(
             selector,
             parsed.popover?.title,
             parsed.popover?.description,
           );
         }
-        return;
-      }
-
-      // action: navigate+tour (navigate then launch Spotlight tour after 650ms)
-      else if (parsed.action === 'navigate+tour' && parsed.url) {
-        navigate(parsed.url);
-        if (parsed.tour) {
-          setTimeout(() => startTour(parsed.tour!), 650);
+        
+        // Dispatch custom event for Form 18 pages
+        if (parsed.element) {
+          const event = new CustomEvent('form18-action', {
+            detail: {
+              action: 'highlight',
+              element: parsed.element,
+              selector,
+              popover: parsed.popover
+            }
+          });
+          window.dispatchEvent(event);
         }
-        return;
-      }
-
-      // action: autofill (preferred name for fillForm; highlights filled fields)
-      else if (parsed.action === 'autofill' && parsed.fill_data) {
-        autoFillForm(parsed.fill_data);
-        highlightFilledFields(Object.keys(parsed.fill_data));
         return;
       }
 
@@ -92,9 +130,21 @@ export function useAIDispatcher({
         return;
       }
 
+      // action: prefill_form (CloudCare appointment form pre-fill)
+      else if (parsed.action === 'prefill_form' && onPrefill) {
+        onPrefill({
+          doctorId: (parsed as any).doctorId,
+          department: (parsed as any).department,
+          hospitalId: (parsed as any).hospitalId,
+          date: (parsed as any).date,
+          time: (parsed as any).time,
+        });
+        return;
+      }
+
       // action: none — no-op (message-only response)
     },
-    [navigate, startTour, highlight, clearHighlight, allowedElements]
+    [navigate, startTour, highlight, clearHighlight, allowedElements, onPrefill]
   );
 
   return { dispatch };

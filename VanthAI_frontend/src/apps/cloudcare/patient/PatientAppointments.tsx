@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -32,6 +32,8 @@ import {
 } from '@mui/icons-material';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
+import dayjs, { Dayjs } from 'dayjs';
+import { useFormPrefill } from '../../../contexts/FormPrefillContext';
 import { formatDate } from '../data/formatters';
 import type { AppointmentWithDetails } from '../data/mockData';
 import {
@@ -58,15 +60,41 @@ export default function PatientAppointments() {
   const [openNewDialog, setOpenNewDialog] = useState(false);
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>(MOCK_APPOINTMENTS as any[]);
   
-  // New appointment form state
+  // New appointment form state with Dayjs
   const [newAppointment, setNewAppointment] = useState({
     doctorId: '',
     hospitalId: '',
     department: '',
-    date: new Date(),
-    time: new Date(),
+    date: dayjs() as Dayjs | null,
+    time: dayjs() as Dayjs | null,
     notes: '',
   });
+
+  // Listen for form pre-fill from agent
+  const { prefillData, clearPrefillData } = useFormPrefill();
+
+  useEffect(() => {
+    if (prefillData) {
+      const docId = prefillData.doctorId || '';
+      const doctor = docId ? getDoctorById(parseInt(docId, 10)) : null;
+      
+      setNewAppointment((prev) => ({
+        ...prev,
+        doctorId: docId || prev.doctorId,
+        department: prefillData.department || doctor?.specializations || prev.department,
+        hospitalId: prefillData.hospitalId || (docId ? MOCK_HOSPITALS[0].id.toString() : prev.hospitalId),
+        date: prefillData.date ? dayjs(prefillData.date) : (prev.date || dayjs()),
+        time: prefillData.time ? dayjs(`2000-01-01 ${prefillData.time}`) : (prev.time || dayjs()),
+      }));
+      
+      setOpenNewDialog(true);
+      
+      const timer = setTimeout(() => {
+        clearPrefillData();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [prefillData, clearPrefillData]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -126,12 +154,25 @@ export default function PatientAppointments() {
     );
   };
 
-  const handleCreateAppointment = () => {
+  // Auto-fill department when doctor is selected
+  const handleDoctorChange = (doctorId: string) => {
+    const doctor = getDoctorById(parseInt(doctorId, 10));
+    setNewAppointment({
+      ...newAppointment,
+      doctorId,
+      department: doctor?.specializations || '',
+    });
+  };
+
+  // Get hospitals available for selected doctor (for now, all hospitals - in real app, filter by doctor's clinics)
+  const availableHospitals = MOCK_HOSPITALS;
+
+  const handleCreateAppointment = useCallback(() => {
     const doctor = getDoctorById(parseInt(newAppointment.doctorId, 10));
     const hospital = getHospitalById(parseInt(newAppointment.hospitalId, 10));
 
-    if (!doctor || !hospital) {
-      alert('Please select a doctor and hospital');
+    if (!doctor || !hospital || !newAppointment.date || !newAppointment.time) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -140,8 +181,8 @@ export default function PatientAppointments() {
       patientId: 1,
       doctorId: parseInt(newAppointment.doctorId),
       hospitalId: parseInt(newAppointment.hospitalId),
-      appointmentDate: newAppointment.date.toISOString().split("T")[0].split('T')[0],
-      appointmentTime: newAppointment.time.toTimeString().slice(0, 5),
+      appointmentDate: newAppointment.date.format('YYYY-MM-DD'),
+      appointmentTime: newAppointment.time.format('HH:mm'),
       department: newAppointment.department,
       status: 'scheduled',
       notes: newAppointment.notes,
@@ -167,11 +208,11 @@ export default function PatientAppointments() {
       doctorId: '',
       hospitalId: '',
       department: '',
-      date: new Date(),
-      time: new Date(),
+      date: dayjs(),
+      time: dayjs(),
       notes: '',
     });
-  };
+  }, [appointments, newAppointment]);
 
   const filteredAppointments = getFilteredAppointments();
   const sortedAppointments = [...filteredAppointments].sort(
@@ -197,6 +238,7 @@ export default function PatientAppointments() {
               startIcon={<AddIcon />}
               onClick={() => setOpenNewDialog(true)}
               sx={{ borderRadius: 2 }}
+              data-vanthai-id="cloudcare-appointments-book-btn"
             >
               New Appointment
             </Button>
@@ -357,6 +399,13 @@ export default function PatientAppointments() {
         onClose={() => setOpenNewDialog(false)}
         maxWidth="sm"
         fullWidth
+        data-vanthai-id="cloudcare-appointments-dialog-root"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            maxHeight: 'calc(100vh - 100px)',
+          },
+        }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -369,22 +418,22 @@ export default function PatientAppointments() {
           </Box>
         </DialogTitle>
         <Divider />
-        <DialogContent>
+        <DialogContent sx={{ minHeight: 600, maxHeight: 'calc(100vh - 200px)', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid container spacing={2} sx={{ mt: 1, flexShrink: 0 }}>
               <Grid item xs={12}>
                 <TextField
                   select
                   fullWidth
                   label="Select Doctor"
                   value={newAppointment.doctorId}
-                  onChange={(e) =>
-                    setNewAppointment({ ...newAppointment, doctorId: e.target.value })
-                  }
+                  onChange={(e) => handleDoctorChange(e.target.value)}
+                  data-vanthai-id="cloudcare-appointment-doctor"
+                  required
                 >
                   {MOCK_DOCTORS.map((doctor) => (
-                    <MenuItem key={doctor.id} value={doctor.id}>
-                      {doctor.name} - {doctor.specializations}
+                    <MenuItem key={doctor.id} value={doctor.id.toString()}>
+                      Dr. {doctor.name} ({doctor.specializations})
                     </MenuItem>
                   ))}
                 </TextField>
@@ -399,9 +448,12 @@ export default function PatientAppointments() {
                   onChange={(e) =>
                     setNewAppointment({ ...newAppointment, hospitalId: e.target.value })
                   }
+                  data-vanthai-id="cloudcare-appointment-hospital"
+                  disabled={!newAppointment.doctorId}
+                  required
                 >
-                  {MOCK_HOSPITALS.map((hospital) => (
-                    <MenuItem key={hospital.id} value={hospital.id}>
+                  {availableHospitals.map((hospital) => (
+                    <MenuItem key={hospital.id} value={hospital.id.toString()}>
                       {hospital.name}
                     </MenuItem>
                   ))}
@@ -410,30 +462,28 @@ export default function PatientAppointments() {
 
               <Grid item xs={12}>
                 <TextField
-                  select
                   fullWidth
-                  label="Department"
+                  label="Department (Auto-filled)"
                   value={newAppointment.department}
-                  onChange={(e) =>
-                    setNewAppointment({ ...newAppointment, department: e.target.value })
-                  }
-                >
-                  {DEPARTMENTS.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  data-vanthai-id="cloudcare-appointment-department"
+                  disabled
+                  helperText="Automatically filled based on selected doctor's specialty"
+                />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <DatePicker
                   label="Appointment Date"
                   value={newAppointment.date}
-                  onChange={(date: Date | null) =>
-                    setNewAppointment({ ...newAppointment, date: date || new Date() })
+                  onChange={(date: Dayjs | null) =>
+                    setNewAppointment({ ...newAppointment, date })
                   }
-                  slotProps={{ textField: { fullWidth: true } }}
+                  slotProps={{ 
+                    textField: { 
+                      fullWidth: true,
+                      'data-vanthai-id': 'cloudcare-appointment-form-date'
+                    } as any
+                  }}
                 />
               </Grid>
 
@@ -441,10 +491,15 @@ export default function PatientAppointments() {
                 <TimePicker
                   label="Appointment Time"
                   value={newAppointment.time}
-                  onChange={(time: Date | null) =>
-                    setNewAppointment({ ...newAppointment, time: time || new Date() })
+                  onChange={(time: Dayjs | null) =>
+                    setNewAppointment({ ...newAppointment, time })
                   }
-                  slotProps={{ textField: { fullWidth: true } }}
+                  slotProps={{ 
+                    textField: { 
+                      fullWidth: true,
+                      'data-vanthai-id': 'cloudcare-appointment-form-time'
+                    } as any
+                  }}
                 />
               </Grid>
 
@@ -459,6 +514,7 @@ export default function PatientAppointments() {
                     setNewAppointment({ ...newAppointment, notes: e.target.value })
                   }
                   placeholder="Any specific concerns or requirements..."
+                  data-vanthai-id="cloudcare-appointment-notes"
                 />
               </Grid>
             </Grid>
@@ -466,7 +522,7 @@ export default function PatientAppointments() {
         </DialogContent>
         <Divider />
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenNewDialog(false)} color="inherit">
+          <Button onClick={() => setOpenNewDialog(false)} color="inherit" data-vanthai-id="cloudcare-appointments-cancel-btn">
             Cancel
           </Button>
           <Button
@@ -477,6 +533,7 @@ export default function PatientAppointments() {
               !newAppointment.hospitalId ||
               !newAppointment.department
             }
+            data-vanthai-id="cloudcare-appointments-confirm-btn"
           >
             Schedule Appointment
           </Button>

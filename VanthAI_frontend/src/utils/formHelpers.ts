@@ -36,36 +36,43 @@ export const autoFillForm = (data: FormData): void => {
     const value = data[fieldName];
     if (value === null || value === undefined || value === 'NEEDS_USER_INPUT') return;
 
-    const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(
+    const input = document.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
       `[name="${fieldName}"], #${fieldName}`
     );
 
     if (input) {
+      const stringValue = String(value);
+      
       if (input.tagName === 'SELECT') {
-        (input as HTMLSelectElement).value = String(value);
-      } else if (input.type === 'checkbox') {
+        (input as HTMLSelectElement).value = stringValue;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (input.tagName === 'TEXTAREA') {
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+        if (setter) {
+          setter.call(input, stringValue);
+        } else {
+          input.value = stringValue;
+        }
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      } else if ((input as HTMLInputElement).type === 'checkbox') {
         (input as HTMLInputElement).checked = Boolean(value);
-      } else if (input.type === 'radio') {
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if ((input as HTMLInputElement).type === 'radio') {
         const radioInput = document.querySelector<HTMLInputElement>(
           `input[name="${fieldName}"][value="${value}"]`
         );
-        if (radioInput) radioInput.checked = true;
+        if (radioInput) {
+          radioInput.checked = true;
+          radioInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
       } else {
-        input.value = String(value);
-      }
-
-      const inputEvent = new Event('input', { bubbles: true });
-      const changeEvent = new Event('change', { bubbles: true });
-      input.dispatchEvent(inputEvent);
-      input.dispatchEvent(changeEvent);
-
-      // ⚠️ DO NOT REFACTOR — required for React 19 controlled component autofill
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        'value'
-      )?.set;
-      if (nativeInputValueSetter) {
-        nativeInputValueSetter.call(input, String(value));
+        // Standard Input (text, email, etc.)
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+        if (setter) {
+          setter.call(input, stringValue);
+        } else {
+          input.value = stringValue;
+        }
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }

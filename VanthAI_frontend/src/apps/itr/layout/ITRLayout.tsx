@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
 import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
+import { FormPrefillProvider } from '../../../contexts/FormPrefillContext';
 
 const navItems = [
   { label: 'Dashboard', path: '/itr' },
@@ -88,10 +89,9 @@ export default function ITRLayout() {
     navigate('/');
   };
 
-  const showChatWidget = location.pathname !== '/itr';
-
   return (
-    <div className="min-h-screen bg-[#f6f8fc] text-[#1f2937] font-sans flex flex-col">
+    <FormPrefillProvider>
+      <div className="min-h-screen bg-[#f6f8fc] text-[#1f2937] font-sans flex flex-col">
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
         <div className="max-w-[1180px] mx-auto px-4 sm:px-6">
           <div className="h-[98px] flex items-center gap-4 xl:gap-6">
@@ -252,8 +252,8 @@ export default function ITRLayout() {
 
       <SpotlightOverlay />
 
-      {showChatWidget && <VanthAIChatWidget app="itr" />}
+      <VanthAIChatWidget app="itr" />
     </div>
-
+    </FormPrefillProvider>
   );
 }

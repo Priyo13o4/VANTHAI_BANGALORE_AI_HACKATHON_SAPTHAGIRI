@@ -28,7 +28,7 @@ class CloudCareChatHandler(HTTPChatHandler):
       5. Appends messages to Redis session
     """
 
-    async def handle_message(self, text: str, current_page: str) -> None:
+    async def handle_message(self, text: str, current_page: str, image_base64: str = None, image_mime_type: str = None) -> None:
         if not text:
             await self.send_done()
             return
@@ -47,6 +47,8 @@ class CloudCareChatHandler(HTTPChatHandler):
             system_prompt=system_prompt,
             tools=CLOUDCARE_TOOLS,
             graph=_CLOUDCARE_GRAPH,
+            image_base64=image_base64,
+            image_mime_type=image_mime_type
         )
 
         # Persist to rolling 20-turn window in Redis
