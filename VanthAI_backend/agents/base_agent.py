@@ -102,15 +102,21 @@ async def llm_node(state: AgentState, tools: list[BaseTool]) -> dict:
 
     try:
         async for chunk in llm.astream(state["messages"]):
+            # Check if the chunk is a thought part
+            _metadata = getattr(chunk, "response_metadata", {}) or {}
+            for part in _metadata.get("parts", []):
+                if part.get("thought"):
+                    await ws.send_thinking(part.get("text", ""))
+
             if chunk.content:
                 text = _coerce_content(chunk.content)
                 if text:
-                    # Silently accumulate — do NOT send_token here.
-                    # The LLM output is a JSON ActionPayload; streaming raw JSON
-                    # to the frontend would show it verbatim. output_node sends
-                    # only the parsed `message` field as the visible text.
                     full_content += text
+                    # ✅ Stream tokens immediately — model output is plain text/JSON
+                    # Partial JSON is fine; output_node parses the complete final string
+                    await ws.send_token(text)
             if hasattr(chunk, "tool_calls") and chunk.tool_calls:
+                # Accumulate tool calls properly across chunks if needed, but for now match existing:
                 tool_calls_raw = chunk.tool_calls
     except Exception as exc:
         logger.error("llm_node.error", error=str(exc), exc_info=True)
@@ -156,6 +162,14 @@ async def tool_node(state: AgentState, tools: list[BaseTool]) -> dict:
         preview = result_str[:120] + ("…" if len(result_str) > 120 else "")
         await ws.send_tool_call(name=name, args=args, status="done", result_preview=preview)
 
+        # If tool result is a JSON action payload (e.g., from spotlight_element), send it as action
+        try:
+            result_json = json.loads(result_str)
+            if isinstance(result_json, dict) and "action" in result_json:
+                await ws.send_action(result_json)
+        except (json.JSONDecodeError, TypeError):
+            pass  # Not an action payload, just a regular tool result
+
         new_messages.append(ToolMessage(content=result_str, tool_call_id=tool_id))
 
     return {"messages": new_messages}
@@ -163,14 +177,16 @@ async def tool_node(state: AgentState, tools: list[BaseTool]) -> dict:
 
 async def output_node(state: AgentState) -> dict:
     """
-    Parse LLM output as ActionPayload JSON and send token + action + done frames.
-    - Happy path: parsed JSON → send message field as token, then send action envelope
-    - Fallback: non-JSON plain text → send as-is as token with action:none
+    Send the conversational text output from the LLM.
+    
+    The LLM now outputs plain conversational text (not JSON).
+    Tool calls are handled separately by tool_node.
     """
     ws: BaseWebSocketHandler = state["ws_handler"]
     last = state["messages"][-1]
     raw_content = last.content if isinstance(last, (AIMessage, HumanMessage)) else ""
-    # Gemini/Gemma can return content as a list of parts — flatten to str
+    
+    # Flatten content if it's a list of parts
     if isinstance(raw_content, list):
         raw = "".join(
             p if isinstance(p, str) else p.get("text", "") if isinstance(p, dict) else ""
@@ -179,22 +195,9 @@ async def output_node(state: AgentState) -> dict:
     else:
         raw = raw_content or ""
 
-    payload = parse_ai_response(raw)
-    if payload:
-        # Send only the human-readable message as the visible chat token
-        if payload.message:
-            await ws.send_token(payload.message)
-        await ws.send_action(payload.model_dump(exclude_none=True))
-    else:
-        # Fallback: LLM returned plain text — show it directly
-        clean = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
-        visible = clean or "I'm not sure how to help with that."
-        await ws.send_token(visible)
-        await ws.send_action({
-            "message": visible,
-            "message_type": "text",
-            "action": "none",
-        })
+    # Send the conversational text directly (no JSON parsing)
+    visible = raw.strip() if raw.strip() else "I'm not sure how to help with that."
+    await ws.send_token(visible)
 
     await ws.send_done()
     return {}
@@ -238,6 +241,8 @@ async def run_agent(
     system_prompt: str,
     tools: list[BaseTool],
     graph,
+    image_base64: str = None,
+    image_mime_type: str = None,
 ) -> None:
     """
     Entry point for each incoming WS message.
@@ -250,7 +255,18 @@ async def run_agent(
         elif msg["role"] == "assistant":
             history.append(AIMessage(content=msg["content"]))
 
-    history.append(HumanMessage(content=message))
+    if image_base64:
+        mime = image_mime_type or "image/jpeg"
+        content_block = [
+            {"type": "text", "text": message},
+            {
+                "type": "image_url",
+                 "image_url": {"url": f"data:{mime};base64,{image_base64}"}
+            }
+        ]
+        history.append(HumanMessage(content=content_block))
+    else:
+        history.append(HumanMessage(content=message))
 
     state: AgentState = {
         "messages": history,

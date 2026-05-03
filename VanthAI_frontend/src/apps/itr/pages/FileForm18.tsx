@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function FileForm18() {
   const navigate = useNavigate();
   const [taxYear, setTaxYear] = useState('');
   const [showError, setShowError] = useState(false);
+
+  useEffect(() => {
+    const handleAgentAction = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const action = customEvent.detail;
+      if (action?.action === 'autofill' && action?.fill_data?.taxYear) {
+        setTaxYear(action.fill_data.taxYear);
+        setShowError(false);
+      }
+    };
+
+    window.addEventListener('form18-action', handleAgentAction as EventListener);
+    return () => window.removeEventListener('form18-action', handleAgentAction as EventListener);
+  }, []);
 
   return (
     <div className="space-y-6" data-vanthai-id="file-form-18-root">
@@ -53,6 +67,8 @@ export default function FileForm18() {
                   </label>
                   <div className="relative max-w-[140px]">
                     <select 
+                      name="taxYear"
+                      data-vanthai-id="file-form-18-tax-year"
                       value={taxYear}
                       onChange={(e) => {
                         setTaxYear(e.target.value);

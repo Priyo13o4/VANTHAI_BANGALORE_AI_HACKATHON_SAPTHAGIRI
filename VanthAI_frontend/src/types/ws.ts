@@ -33,7 +33,7 @@ export interface ActionEnvelope {
   type: 'action';
   message: string;
   message_type: 'text' | 'quick_reply' | 'step_flow' | 'mermaid';
-  action: 'navigate' | 'highlight' | 'autofill' | 'navigate+tour' | 'fillForm' | 'none';
+  action: 'navigate' | 'highlight' | 'spotlight' | 'autofill' | 'navigate+tour' | 'fillForm' | 'clearHighlight' | 'none';
   url?: string | null;
   tour?: string | null;
   element?: string | null;

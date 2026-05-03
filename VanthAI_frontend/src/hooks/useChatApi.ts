@@ -8,18 +8,18 @@ interface UseChatApiOptions {
 }
 
 interface UseChatApiReturn {
-  sendMessage: (text: string) => void;
+  sendMessage: (text: string, options?: { imageBase64?: string; imageMimeType?: string }) => void;
   connectionState: ConnectionState;
   sessionId: string | null;
 }
 
 export function useChatApi({ url, onMessage }: UseChatApiOptions): UseChatApiReturn {
-  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  const [connectionState, setConnectionState] = useState<ConnectionState>('connected');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const location = useLocation();
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, opts?: { imageBase64?: string; imageMimeType?: string }) => {
       if (!url) {
         console.warn('[useChatApi] No URL provided, skipping sendMessage');
         return;
@@ -38,6 +38,8 @@ export function useChatApi({ url, onMessage }: UseChatApiOptions): UseChatApiRet
             text,
             current_page: location.pathname,
             session_id: sessionId,
+            image_base64: opts?.imageBase64,
+            image_mime_type: opts?.imageMimeType,
           }),
         });
 

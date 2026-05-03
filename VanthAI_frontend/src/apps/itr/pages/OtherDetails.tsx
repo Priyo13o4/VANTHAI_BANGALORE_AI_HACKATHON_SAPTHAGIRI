@@ -67,6 +67,7 @@ export default function OtherDetails() {
                   value={formData.investment}
                   onChange={handleChange}
                   className="w-full h-10 pl-8 pr-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                  data-vanthai-id="form18-other-investment"
                 />
               </div>
             </div>
@@ -82,6 +83,7 @@ export default function OtherDetails() {
                     value={formData.expectedDate}
                     onChange={handleChange}
                     className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                    data-vanthai-id="form18-other-expected-date"
                   />
                 </div>
               </div>
@@ -94,6 +96,7 @@ export default function OtherDetails() {
                     value={formData.actualDate}
                     onChange={handleChange}
                     className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                    data-vanthai-id="form18-other-actual-date"
                   />
                 </div>
               </div>
@@ -115,6 +118,7 @@ export default function OtherDetails() {
                       checked={formData[q.name as keyof typeof formData] === 'Yes'}
                       onChange={() => handleRadioChange(q.name, 'Yes')}
                       className="w-4 h-4 text-[#1d4ed8]"
+                      data-vanthai-id={`form18-other-${q.name}-yes`}
                     />
                     <span className="text-[12px] text-[#4a5568]">Yes</span>
                   </label>
@@ -126,6 +130,7 @@ export default function OtherDetails() {
                       checked={formData[q.name as keyof typeof formData] === 'No'}
                       onChange={() => handleRadioChange(q.name, 'No')}
                       className="w-4 h-4 text-[#1d4ed8]"
+                      data-vanthai-id={`form18-other-${q.name}-no`}
                     />
                     <span className="text-[12px] text-[#4a5568]">No</span>
                   </label>
@@ -145,6 +150,7 @@ export default function OtherDetails() {
                     checked={formData.projectStatus === 'Independent'}
                     onChange={() => handleRadioChange('projectStatus', 'Independent')}
                     className="w-4 h-4 text-[#1d4ed8]"
+                    data-vanthai-id="form18-other-status-independent"
                   />
                   <span className="text-[12px] text-[#4a5568]">The project is independent of other projects</span>
                 </label>
@@ -156,6 +162,7 @@ export default function OtherDetails() {
                     checked={formData.projectStatus === 'Extension'}
                     onChange={() => handleRadioChange('projectStatus', 'Extension')}
                     className="w-4 h-4 text-[#1d4ed8]"
+                    data-vanthai-id="form18-other-status-extension"
                   />
                   <span className="text-[12px] text-[#4a5568]">The project is an extension or part of any other project</span>
                 </label>
@@ -172,6 +179,7 @@ export default function OtherDetails() {
                 maxLength={400}
                 rows={4}
                 className="w-full px-3 py-2 border border-[#d1d5db] rounded-sm text-[13px] focus:outline-none focus:border-[#1d4ed8]"
+                data-vanthai-id="form18-other-land-title"
               />
               <p className="text-[10px] text-right text-[#718096]">Remaining Characters :: {400 - formData.landTitle.length}</p>
             </div>
@@ -184,10 +192,10 @@ export default function OtherDetails() {
               </p>
               <div className="flex items-center gap-8">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="hasAgreement" value="Yes" checked={formData.hasAgreement === 'Yes'} onChange={() => handleRadioChange('hasAgreement', 'Yes')} className="w-4 h-4 text-[#1d4ed8]" /><span className="text-[12px] text-[#4a5568]">Yes</span>
+                  <input type="radio" name="hasAgreement" value="Yes" checked={formData.hasAgreement === 'Yes'} onChange={() => handleRadioChange('hasAgreement', 'Yes')} className="w-4 h-4 text-[#1d4ed8]" data-vanthai-id="form18-other-agreement-yes" /><span className="text-[12px] text-[#4a5568]">Yes</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="hasAgreement" value="No" checked={formData.hasAgreement === 'No'} onChange={() => handleRadioChange('hasAgreement', 'No')} className="w-4 h-4 text-[#1d4ed8]" /><span className="text-[12px] text-[#4a5568]">No</span>
+                  <input type="radio" name="hasAgreement" value="No" checked={formData.hasAgreement === 'No'} onChange={() => handleRadioChange('hasAgreement', 'No')} className="w-4 h-4 text-[#1d4ed8]" data-vanthai-id="form18-other-agreement-no" /><span className="text-[12px] text-[#4a5568]">No</span>
                 </label>
               </div>
             </div>
