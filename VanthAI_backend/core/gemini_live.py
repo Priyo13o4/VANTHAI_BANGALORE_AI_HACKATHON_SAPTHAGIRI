@@ -214,6 +214,76 @@ def _build_voice_tools(available_routes: list[str], app: str) -> types.Tool:
                     required=["patient_id"],
                 ),
             ),
+            types.FunctionDeclaration(
+                name="generate_visual_flow",
+                description="Generate a high-quality interactive flowchart using React Flow (XYFlow).",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "nodes": types.Schema(
+                            type="ARRAY",
+                            items=types.Schema(
+                                type="OBJECT",
+                                properties={
+                                    "id": types.Schema(type="STRING"),
+                                    "data": types.Schema(
+                                        type="OBJECT",
+                                        properties={"label": types.Schema(type="STRING")}
+                                    ),
+                                    "type": types.Schema(type="STRING", description="input|output|default"),
+                                },
+                            ),
+                            description="List of node objects with id and data.label.",
+                        ),
+                        "edges": types.Schema(
+                            type="ARRAY",
+                            items=types.Schema(
+                                type="OBJECT",
+                                properties={
+                                    "id": types.Schema(type="STRING"),
+                                    "source": types.Schema(type="STRING"),
+                                    "target": types.Schema(type="STRING"),
+                                    "animated": types.Schema(type="BOOLEAN"),
+                                },
+                            ),
+                            description="List of edge objects with id, source, and target.",
+                        ),
+                        "description": types.Schema(
+                            type="STRING",
+                            description="A short caption describing the flowchart.",
+                        ),
+                    },
+                    required=["nodes", "edges"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="autofill_profile",
+                description="Auto-fill the user's personal profile information on the profile page.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "name": types.Schema(type="STRING"),
+                        "age": types.Schema(type="INTEGER"),
+                        "gender": types.Schema(type="STRING"),
+                        "contact": types.Schema(type="STRING"),
+                        "address": types.Schema(type="STRING"),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="add_family_contact",
+                description="Add a new family or emergency contact for the user.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "name": types.Schema(type="STRING", description="Full name"),
+                        "relationship": types.Schema(type="STRING", description="Relationship (e.g. Spouse, Son)"),
+                        "contact": types.Schema(type="STRING", description="Phone number"),
+                        "is_emergency": types.Schema(type="BOOLEAN", description="Whether this is an emergency contact"),
+                    },
+                    required=["name", "relationship", "contact"],
+                ),
+            ),
     ]
 
     if app == "itr":
@@ -758,6 +828,35 @@ class GeminiLiveVoiceHandler(BaseWebSocketHandler):
                     await session.send_tool_response(
                         function_responses=[types.FunctionResponse(name=fc.name, id=fc.id, response={"result": result})]
                     )
+
+                elif fc.name in {"generate_visual_flow", "autofill_profile", "add_family_contact"}:
+                    from agents.cloudcare import tools as cc_tools
+                    tool_map = {
+                        "generate_visual_flow": cc_tools.generate_visual_flow,
+                        "autofill_profile": cc_tools.autofill_profile,
+                        "add_family_contact": cc_tools.add_family_contact,
+                    }
+                    args = fc.args or {}
+                    try:
+                        result_json_str = await tool_map[fc.name].ainvoke(args) if hasattr(tool_map[fc.name], "ainvoke") else tool_map[fc.name].invoke(args)
+                        try:
+                            parsed = json.loads(result_json_str)
+                            if isinstance(parsed, dict) and parsed.get("action"):
+                                await self._send_json({"type": "action", **parsed})
+                        except Exception:
+                            pass
+
+                        await session.send_tool_response(
+                            function_responses=[
+                                types.FunctionResponse(
+                                    name=fc.name,
+                                    id=fc.id,
+                                    response={"result": result_json_str},
+                                )
+                            ]
+                        )
+                    except Exception as exc:
+                        logger.error(f"voice_pump_gemini.cc_tool_error", tool_name=fc.name, error=str(exc))
 
         except Exception as exc:
             logger.error("voice_handle_tool_call.error", error=str(exc))

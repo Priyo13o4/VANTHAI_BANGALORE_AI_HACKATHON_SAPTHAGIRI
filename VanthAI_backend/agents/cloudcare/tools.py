@@ -451,6 +451,31 @@ def add_family_contact(name: str, relationship: str, contact: str, is_emergency:
     return json.dumps(result)
 
 
+@tool
+def generate_visual_flow(nodes: list[dict], edges: list[dict], description: str = "") -> str:
+    """
+    Generate a high-quality interactive flowchart using React Flow (XYFlow).
+    Use this to explain multi-step processes like tax filing, medical journeys, or booking flows.
+    
+    Args:
+        nodes: List of node objects. Each node needs 'id' and 'data': {'label': 'Step Name'}.
+               Optional: 'type': 'input'|'output'|'default'.
+               Example: [{"id": "1", "data": {"label": "Start"}, "type": "input"}]
+        edges: List of edge objects. Each edge needs 'id', 'source', and 'target'.
+               Example: [{"id": "e1-2", "source": "1", "target": "2", "animated": True}]
+        description: A short caption describing the flowchart.
+    """
+    result = {
+        "success": True,
+        "action": "show_visual_flow",
+        "nodes": nodes,
+        "edges": edges,
+        "description": description
+    }
+    logger.info("tool.generate_visual_flow", node_count=len(nodes))
+    return json.dumps(result)
+
+
 # All tools exported as a list for LangGraph bind_tools()
 CLOUDCARE_TOOLS = [
     load_page_markdown,
@@ -465,4 +490,5 @@ CLOUDCARE_TOOLS = [
     prefill_appointment_form,
     autofill_profile,
     add_family_contact,
+    generate_visual_flow,
 ]

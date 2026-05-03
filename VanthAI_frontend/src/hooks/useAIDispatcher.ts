@@ -18,10 +18,19 @@ import type { ActionEnvelope } from '../types/ws';
 import { autoFillForm, highlightFilledFields } from '../utils/formHelpers';
 import { useSpotlight } from './useSpotlight';
 
+interface PrefillData {
+  doctorId?: string;
+  department?: string;
+  hospitalId?: string;
+  date?: string;
+  time?: string;
+}
+
 interface UseAIDispatcherOptions {
   app: 'cloudcare' | 'itr';
   allowedElements: Set<string>;
-  onPrefill?: (data: { doctorId?: string; department?: string; hospitalId?: string; date?: string; time?: string }) => void;
+  onPrefill?: (data: PrefillData) => void;
+  onShowFlow?: (nodes: any[], edges: any[]) => void;
 }
 
 interface UseAIDispatcherReturn {
@@ -32,6 +41,7 @@ export function useAIDispatcher({
   app,
   allowedElements,
   onPrefill,
+  onShowFlow,
 }: UseAIDispatcherOptions): UseAIDispatcherReturn {
   const navigate = useNavigate();
   const { startTour, highlight, clearHighlight } = useSpotlight(app);
@@ -130,6 +140,14 @@ export function useAIDispatcher({
         return;
       }
 
+      else if (parsed.action === 'show_visual_flow' && (parsed as any).nodes) {
+        console.log('AIDispatcher: Triggering show_visual_flow', (parsed as any).nodes.length);
+        if (onShowFlow) {
+          onShowFlow((parsed as any).nodes, (parsed as any).edges);
+        }
+        return;
+      }
+
       // action: prefill_form (CloudCare appointment form pre-fill)
       else if (parsed.action === 'prefill_form' && onPrefill) {
         onPrefill({
@@ -144,7 +162,7 @@ export function useAIDispatcher({
 
       // action: none — no-op (message-only response)
     },
-    [navigate, startTour, highlight, clearHighlight, allowedElements, onPrefill]
+    [navigate, startTour, highlight, clearHighlight, allowedElements, onPrefill, onShowFlow]
   );
 
   return { dispatch };
