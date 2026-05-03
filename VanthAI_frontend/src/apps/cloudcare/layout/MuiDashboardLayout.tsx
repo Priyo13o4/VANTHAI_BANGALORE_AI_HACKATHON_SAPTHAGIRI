@@ -31,6 +31,7 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import VanthAIChatWidget from '../../../components/chat/VanthAIChatWidget';
 import SpotlightOverlay from '../../../components/guidance/SpotlightOverlay';
 import { useSpotlight } from '../../../hooks/useSpotlight';
+import { FormPrefillProvider } from '../../../contexts/FormPrefillContext';
 
 const drawerWidth = 280;
 
@@ -299,23 +300,25 @@ export default function MuiDashboardLayout() {
       </Box>
 
       {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: { xs: 2, sm: 3 },
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: ['64px', '64px', '64px'],
-        }}
-      >
-        <Outlet />
-      </Box>
-      
-      {/* VanthAI Spotlight Guidance Overlay */}
-      <SpotlightOverlay />
+      <FormPrefillProvider>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 2, sm: 3 },
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            mt: ['64px', '64px', '64px'],
+          }}
+        >
+          <Outlet />
+        </Box>
+        
+        {/* VanthAI Spotlight Guidance Overlay */}
+        <SpotlightOverlay />
 
-      {/* Chat Widget specifically for CloudCare */}
-      <VanthAIChatWidget app="cloudcare" />
+        {/* Chat Widget specifically for CloudCare */}
+        <VanthAIChatWidget app="cloudcare" />
+      </FormPrefillProvider>
     </Box>
   );
 }

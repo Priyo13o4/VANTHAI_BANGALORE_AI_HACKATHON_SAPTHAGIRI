@@ -88,6 +88,7 @@ export default function ConditionsFulfillment() {
                                   checked={formData[q.name as keyof typeof formData] === 'Yes'}
                                   onChange={() => handleRadioChange(q.name, 'Yes')}
                                   className="peer appearance-none w-4 h-4 border border-gray-300 rounded-full checked:border-[#1d4ed8] transition-all"
+                                  data-vanthai-id={`form18-condition-${q.id}-yes`}
                                 />
                                 <div className="absolute w-2 h-2 bg-[#1d4ed8] rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
                               </div>
@@ -102,6 +103,7 @@ export default function ConditionsFulfillment() {
                                   checked={formData[q.name as keyof typeof formData] === 'No'}
                                   onChange={() => handleRadioChange(q.name, 'No')}
                                   className="peer appearance-none w-4 h-4 border border-gray-300 rounded-full checked:border-[#1d4ed8] transition-all"
+                                  data-vanthai-id={`form18-condition-${q.id}-no`}
                                 />
                                 <div className="absolute w-2 h-2 bg-[#1d4ed8] rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
                               </div>

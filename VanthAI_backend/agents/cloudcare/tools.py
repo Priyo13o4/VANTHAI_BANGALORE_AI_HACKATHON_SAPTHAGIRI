@@ -38,6 +38,45 @@ def load_page_markdown(url: str) -> str:
 
 
 @tool
+def navigate_to(url: str) -> str:
+    """
+    Navigate the user to a specific page in the CloudCare app.
+    Use this when user asks to go to appointments, records, vitals, prescriptions, etc.
+    
+    Args:
+        url: The target page URL (e.g., '/cloudcare/patient/appointments', '/cloudcare/patient/records')
+    
+    Returns:
+        Confirmation message
+    """
+    valid_routes = [
+        "/cloudcare/patient",
+        "/cloudcare/patient/records",
+        "/cloudcare/patient/appointments",
+        "/cloudcare/patient/vitals",
+        "/cloudcare/patient/prescriptions",
+        "/cloudcare/patient/profile",
+    ]
+    
+    if url not in valid_routes:
+        return json.dumps({
+            "success": False,
+            "message": f"Invalid page URL: {url}",
+            "action": "none"
+        })
+    
+    # Return action envelope for frontend to handle
+    result = {
+        "success": True,
+        "message": f"Navigating to {url}",
+        "action": "navigate",
+        "url": url
+    }
+    logger.info("tool.navigate_to", url=url)
+    return json.dumps(result)
+
+
+@tool
 def query_patient_summary(patient_id: int) -> str:
     """
     Query basic patient profile from the database.
@@ -224,13 +263,206 @@ async def query_doctors(specialization: str | None = None) -> str:
             return json.dumps({"error": str(exc)})
 
 
+SPOTLIGHT_ELEMENTS: dict[str, str] = {
+    # Dashboard
+    "cloudcare-patient-dashboard": "Patient dashboard root",
+    "cloudcare-records-latest": "Latest record card (on dashboard or records page)",
+    # Records
+    "cloudcare-records-root": "Medical records page root",
+    "cloudcare-records-filter-type": "Record type filter dropdown",
+    "cloudcare-records-sort-toggle": "Sort order toggle",
+    "cloudcare-records-count": "Total records count badge",
+    # Appointments
+    "cloudcare-appointments-root": "Appointments page root",
+    "cloudcare-appointments-book-btn": "Book Appointment button",
+    "cloudcare-appointments-next": "Next upcoming appointment card",
+    "cloudcare-appointments-dialog-root": "Schedule New Appointment dialog",
+    "cloudcare-appointment-doctor": "Doctor selector dropdown",
+    "cloudcare-appointment-hospital": "Hospital selector dropdown",
+    "cloudcare-appointment-department": "Department selector dropdown",
+    "cloudcare-appointment-form-date": "Appointment date picker",
+    "cloudcare-appointment-form-time": "Appointment time picker",
+    "cloudcare-appointment-notes": "Notes / special requests textarea",
+    "cloudcare-appointments-cancel-btn": "Cancel appointment button",
+    "cloudcare-appointments-confirm-btn": "Schedule/Confirm appointment button",
+    # Vitals
+    "cloudcare-vitals-root": "Vitals page root",
+    "cloudcare-vitals-heart-rate": "Heart rate card",
+    "cloudcare-vitals-spo2": "SpO2 / oxygen saturation card",
+    "cloudcare-vitals-bp": "Blood pressure card",
+    "cloudcare-vitals-temp": "Body temperature card",
+    "cloudcare-vitals-steps": "Steps today card",
+    "cloudcare-vitals-alert-badge": "Active health alert banner",
+    "cloudcare-vitals-hr-chart": "Heart rate trend chart (24h)",
+    # Prescriptions
+    "cloudcare-prescriptions-root": "Prescriptions page root",
+    "cloudcare-prescriptions-active": "Active prescriptions section",
+    "cloudcare-prescriptions-primary": "Primary active medication card",
+    "cloudcare-prescriptions-refills": "Refills remaining badge",
+    "cloudcare-prescriptions-past": "Past prescriptions section",
+    "cloudcare-prescriptions-print-btn": "Print prescription button",
+}
+
+@tool
+def spotlight_element(element_id: str, title: str = "", description: str = "") -> str:
+    """
+    Point the user's attention to a specific UI element using the Spotlight overlay.
+    This draws a glowing ring around the element with a floating popover.
+    Use this when the user asks WHERE something is or when you want to draw attention
+    to a specific part of the page after navigating.
+
+    Args:
+        element_id: The data-vanthai-id value of the element to spotlight.
+                    Must be one of the known element IDs. Do not include brackets.
+                    Valid values: cloudcare-appointments-book-btn, cloudcare-vitals-alert-badge, etc.
+        title: Short title for the popover (e.g. "Book Appointment")
+        description: One sentence explaining what this element does.
+
+    Returns:
+        JSON string with the spotlight action payload. Include this payload's
+        'element' and 'popover' values in your response's action field.
+    """
+    if element_id not in SPOTLIGHT_ELEMENTS:
+        return json.dumps({
+            "error": f"Unknown element '{element_id}'. Valid IDs: {list(SPOTLIGHT_ELEMENTS.keys())}"
+        })
+    
+    selector = f'[data-vanthai-id="{element_id}"]'
+    result = {
+        "action": "spotlight",
+        "element": element_id,
+        "selector": selector,
+        "popover": {
+            "title": title or SPOTLIGHT_ELEMENTS[element_id],
+            "description": description or f"This is the {SPOTLIGHT_ELEMENTS[element_id].lower()}."
+        }
+    }
+    logger.info("tool.spotlight_element", element_id=element_id, title=title)
+    return json.dumps(result)
+
+
+@tool
+async def prefill_appointment_form(doctor_id: int, date: str | None = None, time: str | None = None) -> str:
+    """
+    Pre-fill the appointment booking form with a specific doctor and optional date/time.
+    Auto-fills their specialty as department.
+    
+    Args:
+        doctor_id: The ID of the doctor to pre-fill in the form
+        date: Optional date in YYYY-MM-DD format
+        time: Optional time in HH:mm format
+        
+    Returns:
+        JSON with pre-fill action for the frontend
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            stmt = select(Doctor).where(Doctor.id == doctor_id)
+            result = await session.execute(stmt)
+            doctor = result.scalar_one_or_none()
+            
+            if not doctor:
+                return json.dumps({
+                    "success": False,
+                    "message": f"Doctor with ID {doctor_id} not found",
+                    "action": "prefill_form",
+                })
+            
+            response = {
+                "success": True,
+                "message": f"Form pre-filled for Dr. {doctor.name}",
+                "action": "prefill_form",
+                "doctorId": str(doctor_id),
+                "doctor_name": doctor.name,
+                "department": doctor.specializations or "",
+                "date": date,
+                "time": time,
+            }
+            logger.info("tool.prefill_appointment_form", doctor_id=doctor_id, doctor_name=doctor.name)
+            return json.dumps(response)
+    except Exception as exc:
+        logger.error("tool.prefill_appointment_form.error", error=str(exc))
+        return json.dumps({
+            "success": False,
+            "message": f"Error pre-filling form: {exc}",
+            "action": "prefill_form",
+        })
+
+
+@tool
+def autofill_profile(name: str | None = None, age: int | None = None, gender: str | None = None, contact: str | None = None, address: str | None = None) -> str:
+    """
+    Help the user fill out their personal profile information.
+    This will automatically navigate to the profile page and fill in the provided fields.
+    
+    Args:
+        name: User's full name
+        age: User's age
+        gender: User's gender
+        contact: User's contact number
+        address: User's home address
+    """
+    fill_data = {}
+    if name: fill_data["name"] = name
+    if age: fill_data["age"] = age
+    if gender: fill_data["gender"] = gender
+    if contact: fill_data["contact"] = contact
+    if address: fill_data["address"] = address
+
+    result = {
+        "success": True,
+        "message": "Filling profile details...",
+        "action": "autofill",
+        "url": "/cloudcare/patient/profile",
+        "fill_data": fill_data
+    }
+    logger.info("tool.autofill_profile", fields=list(fill_data.keys()))
+    return json.dumps(result)
+
+
+@tool
+def add_family_contact(name: str, relationship: str, contact: str, is_emergency: bool = False) -> str:
+    """
+    Help the user add a new family or emergency contact.
+    This will navigate to the profile page and open the 'Add Contact' dialog with pre-filled info.
+    
+    Args:
+        name: Contact's full name
+        relationship: Relationship (e.g. Spouse, Son, Daughter, Parent)
+        contact: Contact's phone number
+        is_emergency: Whether to set as an emergency contact
+    """
+    fill_data = {
+        "family-name": name,
+        "family-relationship": relationship,
+        "family-contact": contact,
+        "family-is-emergency": is_emergency
+    }
+
+    result = {
+        "success": True,
+        "message": f"Adding {name} as {relationship}...",
+        "action": "autofill",
+        "url": "/cloudcare/patient/profile",
+        "fill_data": fill_data,
+        "trigger": "cloudcare-family-add-btn"
+    }
+    logger.info("tool.add_family_contact", name=name)
+    return json.dumps(result)
+
+
 # All tools exported as a list for LangGraph bind_tools()
 CLOUDCARE_TOOLS = [
     load_page_markdown,
+    navigate_to,
     query_patient_summary,
     query_upcoming_appointments,
     query_active_prescriptions,
     query_latest_vitals,
     query_health_records,
     query_doctors,
+    spotlight_element,
+    prefill_appointment_form,
+    autofill_profile,
+    add_family_contact,
 ]

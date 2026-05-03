@@ -18,6 +18,9 @@ export interface VoiceAction {
   action: string;
   url?: string;
   message?: string;
+  element?: string;
+  popover?: { title: string; description: string };
+  [key: string]: any; // Allow additional fields like doctorId, department, etc.
 }
 
 interface UseVoiceStreamerOptions {
@@ -189,7 +192,9 @@ export function useVoiceStreamer({
             onTranscript({ id: crypto.randomUUID(), role: msg.role, text: msg.text });
             break;
           case 'action':
-            onAction({ action: msg.action, url: msg.url, message: msg.message });
+            onAction({
+              ...msg
+            });
             break;
           case 'tool_call':
             onToolCall(msg.name, msg.status);
@@ -229,10 +234,17 @@ export function useVoiceStreamer({
     };
   }, [stopStreaming]);
 
+  const sendMessage = useCallback((text: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(text);
+    }
+  }, []);
+
   return {
     startStreaming,
     stopStreaming,
     isStreaming,
     connectionState,
+    sendMessage,
   };
 }

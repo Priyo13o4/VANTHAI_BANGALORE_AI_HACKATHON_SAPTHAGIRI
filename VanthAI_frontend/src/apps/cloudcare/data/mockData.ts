@@ -83,9 +83,16 @@ export const MOCK_APPOINTMENTS: AppointmentWithDetails[] = [
   { id: 5, patientId: 35,doctorId: 2, hospitalId: 3, appointmentDate: '2026-05-08', appointmentTime: '09:00', department: 'General Medicine', status: 'scheduled', notes: 'Anaemia follow-up',       doctor: MOCK_DOCTORS[1], hospital: MOCK_HOSPITALS[2] },
 ];
 
+export const MOCK_FAMILY_CONTACTS: FamilyContact[] = [
+  { id: 1, patientId: 1, name: 'Sita Kumar', relationship: 'Spouse', contact: '+91-9876543211', isPrimary: true, isEmergencyContact: true },
+  { id: 2, patientId: 1, name: 'Arjun Kumar', relationship: 'Son', contact: '+91-9876543212', isPrimary: false, isEmergencyContact: true },
+  { id: 3, patientId: 35, name: 'Rahul Menon', relationship: 'Spouse', contact: '+91-9845012346', isPrimary: true, isEmergencyContact: true },
+];
+
 export const getPatientById = (id: number): PatientSnapshot | undefined => PATIENT_SNAPSHOTS[id];
 export const getPatientPrescriptions = (pid: number): Prescription[] => MOCK_PRESCRIPTIONS.filter(p => p.patientId === pid);
 export const getAppointmentsForPatient = (pid: number): AppointmentWithDetails[] => MOCK_APPOINTMENTS.filter(a => a.patientId === pid);
+export const getPatientFamilyContacts = (pid: number): FamilyContact[] => MOCK_FAMILY_CONTACTS.filter(c => c.patientId === pid);
 
 export const getDoctorById = (id: number): Doctor | undefined => MOCK_DOCTORS.find(d => d.id === id);
 export const getHospitalById = (id: number): Hospital | undefined => MOCK_HOSPITALS.find(h => h.id === id);

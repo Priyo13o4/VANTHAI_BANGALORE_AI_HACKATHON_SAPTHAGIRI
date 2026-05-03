@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function ProjectDetails() {
@@ -22,13 +22,15 @@ export default function ProjectDetails() {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSave = () => {
     localStorage.setItem('form18_project_details', JSON.stringify(formData));
     navigate(-1);
   };
+
 
   const isFormValid = formData.flat && formData.pin && formData.totalUnits;
 
@@ -131,11 +133,28 @@ export default function ProjectDetails() {
                 <div className="grid grid-cols-2 gap-4 lg:col-span-2">
                   <div className="space-y-2 max-w-[400px]">
                     <label className="block text-[11px] text-[#718096]">District *</label>
-                    <select name="district" className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"><option>Select</option><option>Bengaluru Urban</option></select>
+                    <select 
+                      name="district" 
+                      value={formData.district}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                    >
+                      <option value="">Select</option>
+                      <option value="Bengaluru Urban">Bengaluru Urban</option>
+                      <option value="Bengaluru Rural">Bengaluru Rural</option>
+                    </select>
                   </div>
                   <div className="space-y-2 max-w-[400px]">
                     <label className="block text-[11px] text-[#718096]">State *</label>
-                    <select name="state" className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"><option>Select</option><option>Karnataka</option></select>
+                    <select 
+                      name="state" 
+                      value={formData.state}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 border border-[#d1d5db] rounded-sm text-[13px]"
+                    >
+                      <option value="">Select</option>
+                      <option value="Karnataka">Karnataka</option>
+                    </select>
                   </div>
                 </div>
               </div>

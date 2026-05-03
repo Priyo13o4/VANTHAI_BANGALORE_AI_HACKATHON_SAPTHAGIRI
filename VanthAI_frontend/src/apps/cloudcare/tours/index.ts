@@ -13,10 +13,12 @@ export const CLOUDCARE_ALLOWED = new Set<string>([
   'cloudcare-appointments-root',
   'cloudcare-appointments-book-btn',
   'cloudcare-appointments-next',
-  'cloudcare-appointment-date',
+  'cloudcare-appointment-form-date',
+  'cloudcare-appointment-form-time',
   'cloudcare-appointment-doctor',
   'cloudcare-appointment-hospital',
   'cloudcare-appointment-department',
+  'cloudcare-appointment-notes',
   'cloudcare-appointments-confirm-btn',
   'cloudcare-vitals-root',
   'cloudcare-vitals-heart-rate',
@@ -38,7 +40,7 @@ export const CLOUDCARE_ALLOWED = new Set<string>([
 const bookAppointmentTour: SpotlightStep[] = [
   {
     id: 'appt-step-1',
-    target: '[data-vanthai-id="cloudcare-appointment-date"]',
+    target: '[data-vanthai-id="cloudcare-appointment-form-date"]',
     title: 'Step 1 of 3 — Pick a date',
     text: 'Tap the calendar icon to choose your appointment date. Choose a future date.',
   },
